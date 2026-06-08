@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abalone</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#2f2f2f;color:#eee;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem}
+  h1{font-size:1.7rem;letter-spacing:.3em;color:#f5f5f5;text-transform:uppercase;margin-bottom:.3rem}
+  .subtitle{color:#888;font-size:.8rem;margin-bottom:1.2rem;letter-spacing:.1em}
+  #lobby{text-align:center;background:#252525;padding:2rem;border-radius:16px;width:min(420px,95vw);border:1px solid #444}
+  .btn{background:#4a4a4a;color:#fff;border:1px solid #777;padding:.7rem 1.6rem;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;margin:.4rem;letter-spacing:.05em;transition:background .2s}
+  .btn:hover{background:#5a5a5a}
+  .btn.sec{background:transparent;color:#fff;border:1px solid #888}
+  .btn.sec:hover{background:#3a3a3a}
+  input{background:#1a1a1a;color:#eee;border:1px solid #666;padding:.6rem 1rem;border-radius:8px;font-size:1rem;width:180px;text-align:center;outline:none;margin:.3rem}
+  input:focus{border-color:#fff}
+  #game-area{display:none;flex-direction:column;align-items:center;gap:.8rem;width:100%}
+  .player-tag{display:flex;align-items:center;gap:.6rem;background:#252525;padding:.5rem 1.2rem;border-radius:10px;font-weight:600;border:1px solid #444;transition:outline .2s}
+  .player-tag .avatar{width:34px;height:34px;border-radius:8px;background:#3a3a3a;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+  .player-tag .lvl{color:#888;font-weight:400;font-size:.85rem}
+  canvas{cursor:pointer;display:block;max-width:100%;height:auto}
+  #controls{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.3rem}
+  #room-info{font-size:.8rem;color:#888;text-align:center}
+  #msg{color:#ddd;font-size:.85rem;min-height:1.2em;text-align:center}
+</style>
+</head>
+<body>
+<h1>ABALONE</h1>
+<p class="subtitle">Strategy marble game</p>
+
+<div id="lobby">
+  <div id="lobby-main">
+    <p style="color:#aaa;margin-bottom:1rem;font-size:.9rem">Play with a friend on another device</p>
+    <button class="btn" onclick="createRoom()">Create Room</button>
+    <br>
+    <div style="margin-top:1rem">
+      <input id="join-code" placeholder="Room code" maxlength="6" style="text-transform:uppercase">
+      <br>
+      <button class="btn sec" onclick="joinRoom()">Join Room</button>
+    </div>
+    <p id="lobby-msg" style="color:#e07070;margin-top:.8rem;font-size:.85rem"></p>
+    <hr style="border-color:#444;margin:1.2rem 0">
+    <button class="btn sec" onclick="startLocal()">Play locally (same device)</button>
+  </div>
+  <div id="lobby-waiting" style="display:none">
+    <p style="font-size:1.1rem;color:#fff;margin-bottom:.5rem">Room created!</p>
+    <p style="font-size:.9rem;color:#aaa;margin-bottom:.8rem">Share this code with your friend:</p>
+    <div id="room-code-display" style="font-size:2.5rem;font-weight:700;letter-spacing:.3em;color:#fff;background:#1a1a1a;padding:.5rem 1.5rem;border-radius:8px;display:inline-block;margin-bottom:1rem"></div>
+    <p style="color:#888;font-size:.85rem">Waiting for opponent...</p>
+    <button class="btn sec" onclick="copyCode()" style="margin-top:.8rem">Copy code</button>
+  </div>
+</div>
+
+<div id="game-area">
+  <div class="player-tag" id="top-player">
+    <div class="avatar">&#9711;</div>
+    <div><span id="top-name">White</span> <span class="lvl" id="top-score">0 lost</span></div>
+  </div>
+  <canvas id="board" width="720" height="680"></canvas>
+  <div class="player-tag" id="bottom-player">
+    <div class="avatar">&#9899;</div>
+    <div><span id="bottom-name">Black</span> <span class="lvl" id="bottom-score">0 lost</span></div>
+  </div>
+  <div id="msg"></div>
+  <div id="controls">
+    <button class="btn sec" onclick="resetGame()">New Game</button>
+    <button class="btn sec" onclick="backToLobby()">Leave</button>
+  </div>
+  <div id="room-info"></div>
+</div>
+
+<script>
+/* ============================================================
+   >>> STEP 1: PASTE YOUR FIREBASE DATABASE URL BELOW <<<
+   Replace the line below with the URL from your own Firebase
+   Realtime Database (see the setup guide). It looks like:
+     https://your-project-name-default-rtdb.firebaseio.com
+   or, for some regions:
+     https://your-project-name-default-rtdb.europe-west1.firebasedatabase.app
+   Until you do this, only "Play locally" will work.
+   ============================================================ */
+const FIREBASE_URL = 'https://abalone-game-52a53-default-rtdb.asia-southeast1.firebasedatabase.app';
+/* ============================================================ */
+
+const CELL_R = 54, MARBLE_R = 23, HOLE_R = 21;
+const CX = 360, CY = 340;
+const COLORS = {EMPTY:0, BLACK:1, WHITE:2};
+const DIRS = [
+  {dq:1,dr:0},{dq:-1,dr:0},
+  {dq:0,dr:1},{dq:0,dr:-1},
+  {dq:1,dr:-1},{dq:-1,dr:1}
+];
+
+let board = {}, selected = [], turn = COLORS.BLACK;
+let scores = {black:0, white:0};
+let gameOver = false, animating = false;
+let myColor = null, roomId = null, pollInterval = null;
+let localMode = true, lastSeenMove = null, moveCount = 0;
+
+function key(q,r){return `${q},${r}`}
+function set(q,r,c){board[key(q,r)]=c}
+function get(q,r){return board[key(q,r)]??null}
+function isValid(q,r){const s=-q-r;return Math.abs(q)<=4&&Math.abs(r)<=4&&Math.abs(s)<=4}
+
+function makeBoard(){
+  board={};
+  for(let q=-4;q<=4;q++)for(let r=-4;r<=4;r++){if(isValid(q,r))set(q,r,COLORS.EMPTY);}
+  for(let q=-4;q<=4;q++)for(let r=3;r<=4;r++) if(isValid(q,r)) set(q,r,COLORS.BLACK);
+  [[-2,2],[-1,2],[0,2]].forEach(([q,r])=>set(q,r,COLORS.BLACK));
+  for(let q=-4;q<=4;q++)for(let r=-4;r<=-3;r++) if(isValid(q,r)) set(q,r,COLORS.WHITE);
+  [[0,-2],[1,-2],[2,-2]].forEach(([q,r])=>set(q,r,COLORS.WHITE));
+}
+
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+
+function hexToXY(q,r){return {x: CX + CELL_R*(q + r*0.5), y: CY + CELL_R*r*0.866};}
+function xyToHex(px,py){
+  const r=(py-CY)/(CELL_R*0.866);
+  const q=(px-CX)/CELL_R - r*0.5;
+  return roundHex(q,r);
+}
+function roundHex(q,r){
+  const s=-q-r;let rq=Math.round(q),rr=Math.round(r),rs=Math.round(s);
+  const dq=Math.abs(rq-q),dr=Math.abs(rr-r),ds=Math.abs(rs-s);
+  if(dq>dr&&dq>ds)rq=-rr-rs;else if(dr>ds)rr=-rq-rs;
+  return[rq,rr];
+}
+
+function drawBackground(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#2f2f2f';ctx.fillRect(0,0,canvas.width,canvas.height);
+  const R=278, H=R*0.866;
+  ctx.beginPath();
+  ctx.moveTo(CX+R,CY);ctx.lineTo(CX+R/2,CY-H);ctx.lineTo(CX-R/2,CY-H);
+  ctx.lineTo(CX-R,CY);ctx.lineTo(CX-R/2,CY+H);ctx.lineTo(CX+R/2,CY+H);ctx.closePath();
+  ctx.lineJoin='round';ctx.lineWidth=14;ctx.strokeStyle='#7a9b54';ctx.stroke();
+  ctx.fillStyle='#7a9b54';ctx.fill();
+  for(let q=-4;q<=4;q++)for(let r=-4;r<=4;r++){
+    if(!isValid(q,r))continue;
+    const {x,y}=hexToXY(q,r);
+    const g=ctx.createRadialGradient(x,y-4,2,x,y,HOLE_R);
+    g.addColorStop(0,'#2a2a2a');g.addColorStop(1,'#404040');
+    ctx.beginPath();ctx.arc(x,y,HOLE_R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+  }
+  if(selected.length>0){
+    const moves=getValidMoves();
+    const seen=new Set();
+    moves.forEach(m=>m.targets.forEach(([tq,tr])=>{
+      const k=key(tq,tr);if(seen.has(k))return;seen.add(k);
+      const {x,y}=hexToXY(tq,tr);
+      ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.55)';ctx.fill();
+    }));
+  }
+  drawLabels();
+}
+
+function drawMarbleAt(x,y,c,alpha,sel){
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  ctx.shadowColor='rgba(0,0,0,0.45)';ctx.shadowBlur=9;ctx.shadowOffsetY=5;
+  const g=ctx.createRadialGradient(x-9,y-11,3,x+5,y+7,MARBLE_R+7);
+  if(c===COLORS.BLACK){g.addColorStop(0,'#727884');g.addColorStop(.38,'#3a3d44');g.addColorStop(1,'#0d0f12');}
+  else{g.addColorStop(0,'#ffffff');g.addColorStop(.45,'#edf0f2');g.addColorStop(1,'#979da6');}
+  ctx.beginPath();ctx.arc(x,y,MARBLE_R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+  ctx.restore();
+  ctx.save();ctx.globalAlpha=alpha;
+  ctx.beginPath();ctx.ellipse(x-7,y-9,7,4.5,-0.5,0,Math.PI*2);
+  ctx.fillStyle=c===COLORS.BLACK?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.9)';ctx.fill();
+  ctx.restore();
+  if(sel){ctx.beginPath();ctx.arc(x,y,MARBLE_R+4,0,Math.PI*2);ctx.lineWidth=3.5;ctx.strokeStyle='#ffffff';ctx.stroke();}
+}
+
+function drawMarbles(skip){
+  for(let q=-4;q<=4;q++)for(let r=-4;r<=4;r++){
+    if(!isValid(q,r))continue;
+    const c=get(q,r);
+    if(c===COLORS.EMPTY||c===null)continue;
+    if(skip&&skip.has(key(q,r)))continue;
+    const {x,y}=hexToXY(q,r);
+    const sel=selected.some(([sq,sr])=>sq===q&&sr===r);
+    drawMarbleAt(x,y,c,1,sel);
+  }
+}
+
+function drawBoard(){drawBackground();drawMarbles(null);}
+
+function drawLabels(){
+  ctx.fillStyle='#f0f0f0';ctx.font='600 17px Segoe UI';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  for(let r=-4;r<=4;r++){
+    let minQ=99;for(let q=-4;q<=4;q++) if(isValid(q,r)&&q<minQ) minQ=q;
+    const {x,y}=hexToXY(minQ,r);
+    ctx.fillText(String.fromCharCode(97+(4-r)), x-CELL_R*0.92, y);
+  }
+  const bottom=[];for(let q=-4;q<=4;q++) if(isValid(q,4)) bottom.push(q);
+  bottom.sort((a,b)=>a-b).forEach((q,i)=>{const {x,y}=hexToXY(q,4);ctx.fillText(String(i+1),x,y+CELL_R*0.9);});
+  [[3,'6'],[2,'7'],[1,'8'],[0,'9']].forEach(([r,n])=>{
+    let maxQ=-99;for(let q=-4;q<=4;q++) if(isValid(q,r)&&q>maxQ) maxQ=q;
+    const {x,y}=hexToXY(maxQ,r);ctx.fillText(n,x+CELL_R*0.92,y);
+  });
+}
+
+function animateMove(anims, done){
+  animating=true;
+  const dur=280, start=performance.now();
+  const skip=new Set(anims.filter(a=>!a.off).map(a=>a.toKey));
+  function frame(now){
+    let t=Math.min(1,(now-start)/dur);
+    const e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    drawBackground();
+    drawMarbles(skip);
+    for(const a of anims){
+      const x=a.fromXY.x+(a.toXY.x-a.fromXY.x)*e;
+      const y=a.fromXY.y+(a.toXY.y-a.fromXY.y)*e;
+      drawMarbleAt(x,y,a.color,a.off?(1-e):1,false);
+    }
+    if(t<1)requestAnimationFrame(frame);
+    else{animating=false;drawBoard();done&&done();}
+  }
+  requestAnimationFrame(frame);
+}
+
+function getValidMoves(){
+  if(selected.length===0)return[];
+  const moves=[];for(const dir of DIRS) tryMove(selected,dir,moves);return moves;
+}
+function tryMove(sel,dir,moves){
+  const sorted=[...sel].sort((a,b)=>(a[0]*dir.dq+a[1]*dir.dr)-(b[0]*dir.dq+b[1]*dir.dr));
+  if(sel.length>1){
+    const inline=isCollinear(sorted,dir),side=isSidestep(sorted);
+    if(!inline&&!side)return;
+    if(side&&!inline){
+      for(const[q,r]of sel){const nq=q+dir.dq,nr=r+dir.dr;if(!isValid(nq,nr)||get(nq,nr)!==COLORS.EMPTY)return;}
+      moves.push({type:'side',sel,dir,targets:sel.map(([q,r])=>[q+dir.dq,r+dir.dr])});return;
+    }
+  }
+  if(sel.length===1){
+    const[q,r]=sel[0];const nq=q+dir.dq,nr=r+dir.dr;
+    if(!isValid(nq,nr))return;
+    if(get(nq,nr)===COLORS.EMPTY)moves.push({type:'inline',sel,dir,targets:[[nq,nr]]});
+    return;
+  }
+  if(!isCollinear(sorted,dir))return;
+  const lead=sorted[sorted.length-1];
+  const lq=lead[0]+dir.dq,lr=lead[1]+dir.dr,lc=get(lq,lr);
+  if(lc===COLORS.EMPTY){moves.push({type:'inline',sel,dir,targets:[[lq,lr]]});}
+  else if(lc!==null&&lc!==turn){
+    const opp=[];let cq=lq,cr=lr;
+    while(get(cq,cr)===opponent(turn)){opp.push([cq,cr]);cq+=dir.dq;cr+=dir.dr;}
+    if(opp.length>=sel.length)return;
+    const ec=get(cq,cr);
+    if(ec===COLORS.EMPTY||!isValid(cq,cr)){
+      moves.push({type:'push',sel,dir,targets:[[lq,lr]],push:opp,pushTo:[cq,cr],pushOff:!isValid(cq,cr)||ec===null});
+    }
+  }
+}
+function isCollinear(sorted,dir){
+  if(sorted.length<2)return true;
+  for(let i=1;i<sorted.length;i++){
+    const dq=sorted[i][0]-sorted[i-1][0],dr=sorted[i][1]-sorted[i-1][1];
+    if(!(dq===dir.dq&&dr===dir.dr)&&!(dq===-dir.dq&&dr===-dir.dr))return false;
+  }return true;
+}
+function isSidestep(sel){
+  if(sel.length<2)return false;
+  for(const dir of DIRS){
+    let ok=true;
+    const s=[...sel].sort((a,b)=>(a[0]*dir.dq+a[1]*dir.dr)-(b[0]*dir.dq+b[1]*dir.dr));
+    for(let i=1;i<s.length;i++) if(s[i][0]-s[i-1][0]!==dir.dq||s[i][1]-s[i-1][1]!==dir.dr){ok=false;break;}
+    if(ok)return true;
+  }return false;
+}
+function opponent(c){return c===COLORS.BLACK?COLORS.WHITE:COLORS.BLACK}
+
+function applyMove(move){
+  const myC=turn, dir=move.dir, anims=[];
+  if(move.type==='push'){
+    move.push.forEach((p,i)=>{
+      const[pq,pr]=p;const off=move.pushOff&&i===move.push.length-1;
+      anims.push({color:opponent(myC),fromXY:hexToXY(pq,pr),
+        toXY:off?hexToXY(pq+2*dir.dq,pr+2*dir.dr):hexToXY(pq+dir.dq,pr+dir.dr),
+        off,toKey:off?null:key(pq+dir.dq,pr+dir.dr)});
+    });
+  }
+  move.sel.forEach(([q,r])=>{
+    anims.push({color:myC,fromXY:hexToXY(q,r),toXY:hexToXY(q+dir.dq,r+dir.dr),off:false,toKey:key(q+dir.dq,r+dir.dr)});
+  });
+  if(move.type==='push'){
+    for(let i=move.push.length-1;i>=0;i--){
+      const[pq,pr]=move.push[i];
+      if(move.pushOff&&i===move.push.length-1){
+        set(pq,pr,COLORS.EMPTY);
+        if(myC===COLORS.BLACK)scores.white++;else scores.black++;
+      }else{set(pq+dir.dq,pr+dir.dr,get(pq,pr));set(pq,pr,COLORS.EMPTY);}
+    }
+  }
+  if(move.type==='inline'||move.type==='push'){
+    const s=[...move.sel].sort((a,b)=>(b[0]*dir.dq+b[1]*dir.dr)-(a[0]*dir.dq+a[1]*dir.dr));
+    for(const[q,r]of s){set(q+dir.dq,r+dir.dr,myC);set(q,r,COLORS.EMPTY);}
+  }else{for(const[q,r]of move.sel){set(q+dir.dq,r+dir.dr,myC);set(q,r,COLORS.EMPTY);}}
+  moveCount++;turn=opponent(turn);selected=[];
+  animateMove(anims, ()=>{
+    updateUI();
+    const w=checkWin();
+    if(w){gameOver=true;showMsg((w===COLORS.BLACK?'Black':'White')+' wins! Click New Game.');}
+  });
+}
+function checkWin(){if(scores.black>=6)return COLORS.BLACK;if(scores.white>=6)return COLORS.WHITE;return null}
+
+canvas.addEventListener('click',e=>{
+  if(gameOver||animating)return;
+  if(!localMode&&myColor!==turn){showMsg("Wait for your turn!");return;}
+  const rect=canvas.getBoundingClientRect();
+  const px=(e.clientX-rect.left)*(canvas.width/rect.width);
+  const py=(e.clientY-rect.top)*(canvas.height/rect.height);
+  const[q,r]=xyToHex(px,py);
+  if(!isValid(q,r))return;
+  const c=get(q,r);
+  if(c===turn){
+    const idx=selected.findIndex(([sq,sr])=>sq===q&&sr===r);
+    if(idx>=0)selected.splice(idx,1);
+    else{if(selected.length>=3){showMsg("Max 3 marbles");return;}selected.push([q,r]);}
+    showMsg('');drawBoard();return;
+  }
+  if(selected.length===0){showMsg("Select your marble first");return;}
+  const moves=getValidMoves();
+  const move=moves.find(m=>m.type==='push'
+    ?m.targets.some(([tq,tr])=>tq===q&&tr===r)||m.push.some(([tq,tr])=>tq===q&&tr===r)
+    :m.targets.some(([tq,tr])=>tq===q&&tr===r));
+  if(move){showMsg('');localMode?applyMove(move):sendMove(move);}
+  else{showMsg("Invalid move");selected=[];drawBoard();}
+});
+
+function showMsg(m){document.getElementById('msg').textContent=m}
+function updateUI(){
+  document.getElementById('top-score').textContent=scores.white+' lost';
+  document.getElementById('bottom-score').textContent=scores.black+' lost';
+  const bt=turn===COLORS.BLACK;
+  document.getElementById('top-player').style.outline=bt?'none':'2px solid #fff';
+  document.getElementById('bottom-player').style.outline=bt?'2px solid #fff':'none';
+  if(!localMode){
+    document.getElementById('bottom-name').textContent=myColor===COLORS.BLACK?'You':'Opponent';
+    document.getElementById('top-name').textContent=myColor===COLORS.WHITE?'You':'Opponent';
+  }
+}
+
+function genRoomCode(){return Math.random().toString(36).substr(2,6).toUpperCase()}
+async function createRoom(){
+  if(FIREBASE_URL.includes('YOUR-PROJECT')){document.getElementById('lobby-msg').textContent='Add your Firebase URL in the code first (see setup guide). You can still Play locally.';return;}
+  roomId=genRoomCode();myColor=COLORS.BLACK;localMode=false;
+  makeBoard();scores={black:0,white:0};turn=COLORS.BLACK;gameOver=false;
+  try{
+    const r=await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`,{method:'PUT',body:JSON.stringify({state:serializeState(),created:Date.now(),moveId:0})});
+    if(!r.ok)throw 0;
+    document.getElementById('lobby-main').style.display='none';
+    document.getElementById('lobby-waiting').style.display='block';
+    document.getElementById('room-code-display').textContent=roomId;
+    pollForOpponent();
+  }catch(e){document.getElementById('lobby-msg').textContent='Could not reach the database. Check your Firebase URL and rules.';}
+}
+async function joinRoom(){
+  if(FIREBASE_URL.includes('YOUR-PROJECT')){document.getElementById('lobby-msg').textContent='Add your Firebase URL in the code first (see setup guide).';return;}
+  const code=document.getElementById('join-code').value.trim().toUpperCase();
+  if(code.length<4){document.getElementById('lobby-msg').textContent='Enter a room code';return;}
+  roomId=code;myColor=COLORS.WHITE;localMode=false;
+  try{
+    const r=await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`);const data=await r.json();
+    if(!data||!data.state){document.getElementById('lobby-msg').textContent='Room not found';return;}
+    await fetch(`${FIREBASE_URL}/rooms/${roomId}/joined.json`,{method:'PUT',body:'"true"'});
+    deserializeState(data.state);lastSeenMove=data.moveId||0;startGame();pollOpponent();
+  }catch(e){document.getElementById('lobby-msg').textContent='Could not join room.';}
+}
+function pollForOpponent(){
+  pollInterval=setInterval(async()=>{
+    try{const r=await fetch(`${FIREBASE_URL}/rooms/${roomId}/joined.json`);if(await r.json()){clearInterval(pollInterval);lastSeenMove=0;startGame();pollOpponent();}}catch(e){}
+  },2000);
+}
+async function sendMove(move){
+  applyMove(move);
+  try{await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`,{method:'PATCH',body:JSON.stringify({state:serializeState(),moveId:moveCount})});}catch(e){}
+}
+function pollOpponent(){
+  pollInterval=setInterval(async()=>{
+    if(gameOver||animating)return;
+    try{const r=await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`);const data=await r.json();
+      if(data&&data.moveId&&data.moveId!==lastSeenMove&&turn!==myColor){
+        lastSeenMove=data.moveId;deserializeState(data.state);selected=[];updateUI();drawBoard();
+        const w=checkWin();if(w){gameOver=true;showMsg((w===COLORS.BLACK?'Black':'White')+' wins!');}
+      }}catch(e){}
+  },1500);
+}
+function serializeState(){
+  const b={};for(let q=-4;q<=4;q++)for(let r=-4;r<=4;r++)if(isValid(q,r))b[key(q,r)]=get(q,r)??0;
+  return{board:b,turn,scores,moveCount};
+}
+function deserializeState(s){
+  board={};for(const[k,v]of Object.entries(s.board))board[k]=v;
+  turn=s.turn;scores=s.scores;moveCount=s.moveCount||0;gameOver=!!checkWin();updateUI();drawBoard();
+}
+
+function startLocal(){localMode=true;myColor=null;roomId=null;makeBoard();scores={black:0,white:0};turn=COLORS.BLACK;gameOver=false;selected=[];startGame();}
+function startGame(){
+  document.getElementById('lobby').style.display='none';
+  document.getElementById('game-area').style.display='flex';
+  if(roomId)document.getElementById('room-info').textContent=`Room: ${roomId} — you are ${myColor===COLORS.BLACK?'Black (bottom)':'White (top)'}`;
+  else document.getElementById('room-info').textContent='';
+  updateUI();drawBoard();
+}
+function resetGame(){
+  makeBoard();scores={black:0,white:0};turn=COLORS.BLACK;gameOver=false;selected=[];animating=false;
+  if(!localMode&&roomId){try{fetch(`${FIREBASE_URL}/rooms/${roomId}.json`,{method:'PATCH',body:JSON.stringify({state:serializeState(),moveId:0})});}catch(e){}lastSeenMove=0;}
+  updateUI();drawBoard();showMsg('');
+}
+function backToLobby(){
+  if(pollInterval)clearInterval(pollInterval);
+  document.getElementById('game-area').style.display='none';
+  document.getElementById('lobby').style.display='block';
+  document.getElementById('lobby-main').style.display='block';
+  document.getElementById('lobby-waiting').style.display='none';
+  document.getElementById('lobby-msg').textContent='';
+  localMode=true;myColor=null;roomId=null;selected=[];animating=false;
+}
+function copyCode(){navigator.clipboard.writeText(roomId).then(()=>{});}
+
+makeBoard();drawBoard();
+</script>
+</body>
+</html>
