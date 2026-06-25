@@ -1,474 +1,1686 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Abalone</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#2f2f2f;color:#eee;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem}
-  h1{font-size:1.7rem;letter-spacing:.3em;color:#f5f5f5;text-transform:uppercase;margin-bottom:.3rem}
-  .subtitle{color:#888;font-size:.8rem;margin-bottom:1.2rem;letter-spacing:.1em}
-  #lobby{text-align:center;background:#252525;padding:2rem;border-radius:16px;width:min(440px,95vw);border:1px solid #444}
-  .btn{background:#4a4a4a;color:#fff;border:1px solid #777;padding:.7rem 1.6rem;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;margin:.4rem;letter-spacing:.05em;transition:background .2s}
-  .btn:hover{background:#5a5a5a}
-  .btn.sec{background:transparent;color:#fff;border:1px solid #888}
-  .btn.sec:hover{background:#3a3a3a}
-  .side-btn{background:#3a3a3a;color:#ccc;border:1px solid #666;padding:.5rem .9rem;border-radius:8px;font-size:.88rem;cursor:pointer;margin:.2rem;transition:all .15s}
-  .side-btn.active{background:#fff;color:#1a1a1a;border-color:#fff;font-weight:600}
-  input{background:#1a1a1a;color:#eee;border:1px solid #666;padding:.6rem 1rem;border-radius:8px;font-size:1rem;width:180px;text-align:center;outline:none;margin:.3rem}
-  input:focus{border-color:#fff}
-  #game-area{display:none;flex-direction:column;align-items:center;gap:.8rem;width:100%}
-  .player-tag{display:flex;align-items:center;gap:.6rem;background:#252525;padding:.5rem 1.2rem;border-radius:10px;font-weight:600;border:1px solid #444;transition:outline .2s}
-  .player-tag .avatar{width:34px;height:34px;border-radius:8px;background:#3a3a3a;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
-  .player-tag .lvl{color:#888;font-weight:400;font-size:.85rem}
-  canvas{cursor:pointer;display:block;max-width:100%;height:auto}
-  #controls{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.3rem}
-  #room-info{font-size:.8rem;color:#888;text-align:center}
-  #msg{color:#ddd;font-size:.85rem;min-height:1.2em;text-align:center}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abalone</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #1e222b 0%, #111317 100%);
+      color: #eee;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: .4em;
+      background: linear-gradient(135deg, #ffffff 0%, #a5aab5 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: .2rem;
+      text-transform: uppercase
+    }
+
+    .subtitle {
+      color: #f2a83b;
+      font-size: .85rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      letter-spacing: .2em;
+      text-transform: uppercase
+    }
+
+    #lobby {
+      text-align: center;
+      background: rgba(30, 34, 42, 0.45);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 2.5rem 2rem;
+      border-radius: 20px;
+      width: min(440px, 95vw);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3)
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: .75rem 1.8rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      margin: .4rem;
+      letter-spacing: .03em;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15)
+    }
+
+    .btn:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.25);
+      border-color: rgba(255, 255, 255, 0.25);
+      background: linear-gradient(135deg, #4b5563 0%, #374151 100%)
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15)
+    }
+
+    .btn.sec {
+      background: transparent;
+      color: #e5e7eb;
+      border: 1px solid rgba(255, 255, 255, 0.15)
+    }
+
+    .btn.sec:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.3)
+    }
+
+    .btn.good {
+      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2)
+    }
+
+    .btn.good:hover {
+      background: linear-gradient(135deg, #059669 0%, #065f46 100%);
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35)
+    }
+
+    .btn.danger {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2)
+    }
+
+    .btn.danger:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35)
+    }
+
+    .side-btn {
+      background: rgba(255, 255, 255, 0.04);
+      color: #9ca3af;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: .5rem 1.1rem;
+      border-radius: 8px;
+      font-size: .88rem;
+      font-family: inherit;
+      cursor: pointer;
+      margin: .2rem;
+      transition: all 0.2s
+    }
+
+    .side-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.15)
+    }
+
+    .side-btn.active {
+      background: #fff;
+      color: #111317;
+      border-color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2)
+    }
+
+    input {
+      background: rgba(15, 17, 21, 0.6);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: .7rem 1.2rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      width: 180px;
+      text-align: center;
+      outline: none;
+      margin: .3rem;
+      transition: all 0.25s ease
+    }
+
+    input:focus {
+      border-color: #f2a83b;
+      box-shadow: 0 0 12px rgba(242, 168, 59, 0.2);
+      background: rgba(15, 17, 21, 0.8)
+    }
+
+    #game-area {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: .8rem;
+      width: 100%
+    }
+
+    .player-tag {
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      background: rgba(30, 34, 42, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: .6rem 1.4rem;
+      border-radius: 12px;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.25s ease
+    }
+
+    .player-tag .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem
+    }
+
+    .player-tag .lvl {
+      color: #9ca3af;
+      font-weight: 400;
+      font-size: .85rem
+    }
+
+    .player-tag .rating {
+      color: #f2a83b;
+      font-weight: 600;
+      font-size: .85rem;
+      margin-left: .4rem
+    }
+
+    canvas {
+      cursor: pointer;
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border-radius: 20px;
+      background: #252830;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.04)
+    }
+
+    #controls {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: .3rem
+    }
+
+    #room-info {
+      font-size: .8rem;
+      color: #888;
+      text-align: center
+    }
+
+    #msg {
+      color: #ddd;
+      font-size: .85rem;
+      min-height: 1.2em;
+      text-align: center
+    }
+
+    .identity {
+      display: flex;
+      gap: .4rem;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      font-size: .82rem;
+      color: #aaa
+    }
+
+    .identity input {
+      text-transform: none;
+      width: 140px;
+      padding: .4rem .7rem;
+      font-size: .85rem
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .6rem;
+      font-size: .88rem;
+      color: #9ca3af;
+      margin: 1.2rem 0
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #374151;
+      border-radius: 24px;
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(255, 255, 255, 0.05)
+    }
+
+    .slider:before {
+      content: "";
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 2px;
+      background: #d1d5db;
+      border-radius: 50%;
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1)
+    }
+
+    input:checked+.slider {
+      background: #10b981
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(22px);
+      background: #fff
+    }
+
+    .stat-line {
+      color: #aaa;
+      font-size: .85rem;
+      margin: .2rem 0
+    }
+
+    .timer {
+      font-size: 1.05rem;
+      color: #f2a83b;
+      font-weight: 600;
+      letter-spacing: .05em
+    }
+
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 12, 16, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50
+    }
+
+    .modal {
+      background: #1e222b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      width: min(360px, 92vw);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4)
+    }
+
+    .modal p {
+      margin-bottom: 1rem;
+      color: #eee
+    }
+
+    .leader {
+      font-size: .82rem;
+      color: #9ca3af;
+      text-align: left;
+      margin-top: .6rem;
+      max-height: 140px;
+      overflow: auto;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 10px;
+      padding: 0.6rem;
+      border: 1px solid rgba(255, 255, 255, 0.04)
+    }
+
+    .leader div {
+      padding: .25rem .4rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03)
+    }
+
+    .leader div:last-child {
+      border-bottom: none
+    }
+
+    .leader .me {
+      color: #f2a83b;
+      font-weight: 600;
+      background: rgba(242, 168, 59, 0.08);
+      border-radius: 4px
+    }
+
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 12, 16, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+      text-align: center
+    }
+
+    #overlay .box {
+      background: #1e222b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 2.5rem;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5)
+    }
+
+    #overlay h2 {
+      color: #f5f5f5;
+      margin-bottom: .5rem;
+      letter-spacing: .05em
+    }
+  </style>
 </head>
+
 <body>
-<h1>ABALONE</h1>
-<p class="subtitle">Strategy marble game</p>
+  <h1>ABALONE</h1>
+  <p class="subtitle">Strategy marble game</p>
 
-<div id="lobby">
-  <div id="lobby-main">
-    <p style="color:#aaa;margin-bottom:.8rem;font-size:.9rem">Play with a friend on another device</p>
-    <div style="background:#1e1e1e;border-radius:10px;padding:.9rem;margin-bottom:.8rem">
-      <p style="color:#bbb;font-size:.82rem;margin-bottom:.4rem">Create a room &mdash; pick your side:</p>
-      <button id="side-black" class="side-btn active" onclick="pickSide(1)">&#9899; Black &mdash; move first</button>
-      <button id="side-white" class="side-btn" onclick="pickSide(2)">&#9711; White &mdash; move second</button>
-      <br>
-      <button class="btn" onclick="createRoom()" style="margin-top:.5rem">Create Room</button>
+  <div class="identity">
+    <span>Name:</span>
+    <input id="name-input" placeholder="Your name" maxlength="14">
+    <span id="tier-badge" style="color:#f2a83b;font-weight:600"></span>
+  </div>
+
+  <div id="lobby">
+    <div id="lobby-main">
+      <div class="stat-line" id="my-stats"></div>
+      <div style="display:flex;gap:.5rem;justify-content:center;margin-bottom:.8rem">
+        <button class="btn good" onclick="queue('ranked')">&#9873; Play Ranked</button>
+        <button class="btn" onclick="queue('casual')">Play Casual</button>
+      </div>
+      <div style="background:#1e1e1e;border-radius:10px;padding:.9rem;margin-bottom:.8rem">
+        <p style="color:#bbb;font-size:.82rem;margin-bottom:.4rem">Create a room &mdash; pick your side:</p>
+        <button id="side-black" class="side-btn active" onclick="pickSide(1)">&#9899; Black &mdash; move first</button>
+        <button id="side-white" class="side-btn" onclick="pickSide(2)">&#9711; White &mdash; move second</button>
+        <br>
+        <button class="btn" onclick="createRoom()" style="margin-top:.5rem">Create Room</button>
+      </div>
+      <div>
+        <input id="join-code" placeholder="Room code" maxlength="6" style="text-transform:uppercase">
+        <br>
+        <button class="btn sec" onclick="joinRoom()">Join Room</button>
+      </div>
+      <p id="lobby-msg" style="color:#e07070;margin-top:.8rem;font-size:.85rem"></p>
+      <hr style="border-color:#444;margin:1.2rem 0">
+      <button class="btn sec" onclick="startLocal()">Play locally (same device)</button>
+      <div class="leader" id="leaderboard"></div>
     </div>
-    <div>
-      <input id="join-code" placeholder="Room code" maxlength="6" style="text-transform:uppercase">
-      <br>
-      <button class="btn sec" onclick="joinRoom()">Join Room</button>
+    <div id="lobby-waiting" style="display:none">
+      <p style="font-size:1.1rem;color:#fff;margin-bottom:.5rem">Room created!</p>
+      <p style="font-size:.85rem;color:#aaa;margin-bottom:.3rem" id="waiting-side"></p>
+      <p style="font-size:.9rem;color:#aaa;margin-bottom:.8rem">Share this code with your friend:</p>
+      <div id="room-code-display"
+        style="font-size:2.5rem;font-weight:700;letter-spacing:.3em;color:#fff;background:#1a1a1a;padding:.5rem 1.5rem;border-radius:8px;display:inline-block;margin-bottom:1rem">
+      </div>
+      <p style="color:#888;font-size:.85rem">Waiting for opponent...</p>
+      <button class="btn sec" onclick="copyCode()" style="margin-top:.8rem">Copy code</button>
     </div>
-    <p id="lobby-msg" style="color:#e07070;margin-top:.8rem;font-size:.85rem"></p>
-    <hr style="border-color:#444;margin:1.2rem 0">
-    <button class="btn sec" onclick="startLocal()">Play locally (same device)</button>
+    <div id="lobby-searching" style="display:none">
+      <p style="font-size:1.1rem;color:#fff;margin-bottom:.6rem" id="search-title">Searching for opponent...</p>
+      <p class="timer" id="queue-timer">0:00</p>
+      <p style="font-size:.8rem;color:#888;margin:.4rem 0 .8rem" id="search-sub"></p>
+      <button class="btn danger" onclick="cancelQueue()">Cancel</button>
+    </div>
   </div>
-  <div id="lobby-waiting" style="display:none">
-    <p style="font-size:1.1rem;color:#fff;margin-bottom:.5rem">Room created!</p>
-    <p style="font-size:.85rem;color:#aaa;margin-bottom:.3rem" id="waiting-side"></p>
-    <p style="font-size:.9rem;color:#aaa;margin-bottom:.8rem">Share this code with your friend:</p>
-    <div id="room-code-display" style="font-size:2.5rem;font-weight:700;letter-spacing:.3em;color:#fff;background:#1a1a1a;padding:.5rem 1.5rem;border-radius:8px;display:inline-block;margin-bottom:1rem"></div>
-    <p style="color:#888;font-size:.85rem">Waiting for opponent...</p>
-    <button class="btn sec" onclick="copyCode()" style="margin-top:.8rem">Copy code</button>
+
+  <div id="game-area">
+    <div class="player-tag" id="top-player">
+      <div class="avatar">&#9711;</div>
+      <div><span id="top-name">White</span> <span class="lvl" id="top-score">0 lost</span><span class="rating"
+          id="top-rating"></span></div>
+    </div>
+    <canvas id="board" width="720" height="680"></canvas>
+    <div class="player-tag" id="bottom-player">
+      <div class="avatar">&#9899;</div>
+      <div><span id="bottom-name">Black</span> <span class="lvl" id="bottom-score">0 lost</span><span class="rating"
+          id="bottom-rating"></span></div>
+    </div>
+    <div id="msg"></div>
+    <div id="controls">
+      <div id="confirm-controls" style="display:none;gap:.5rem">
+        <button class="btn good" onclick="confirmPendingMove()">Confirm</button>
+        <button class="btn danger" onclick="cancelPendingMove()">Cancel</button>
+      </div>
+      <div id="main-controls">
+        <button class="btn sec" onclick="resetGame()">New Game</button>
+        <button class="btn sec" onclick="offerDraw()" id="draw-btn">Offer Draw</button>
+        <button class="btn sec" onclick="confirmSurrender()">Surrender</button>
+        <button class="btn danger" onclick="leaveGame()">Leave</button>
+      </div>
+    </div>
+    <div id="room-info"></div>
   </div>
-</div>
 
-<div id="game-area">
-  <div class="player-tag" id="top-player">
-    <div class="avatar">&#9711;</div>
-    <div><span id="top-name">White</span> <span class="lvl" id="top-score">0 lost</span></div>
+  <div id="overlay">
+    <div class="box">
+      <h2 id="overlay-title"></h2>
+      <p id="overlay-text" style="color:#bbb;margin-bottom:1.2rem"></p>
+      <button class="btn" onclick="overlayRematch()">Rematch</button>
+      <button class="btn sec" onclick="overlayLobby()">Back to Lobby</button>
+    </div>
   </div>
-  <canvas id="board" width="720" height="680"></canvas>
-  <div class="player-tag" id="bottom-player">
-    <div class="avatar">&#9899;</div>
-    <div><span id="bottom-name">Black</span> <span class="lvl" id="bottom-score">0 lost</span></div>
+
+  <div id="prompt-modal" class="modal-bg">
+    <div class="modal">
+      <p id="prompt-text"></p>
+      <button class="btn good" id="prompt-yes">Yes</button>
+      <button class="btn sec" id="prompt-no">No</button>
+    </div>
   </div>
-  <div id="msg"></div>
-  <div id="controls">
-    <button class="btn sec" onclick="resetGame()">New Game</button>
-    <button class="btn sec" onclick="backToLobby()">Leave</button>
+
+  <div class="toggle-row">
+    <label class="switch"><input type="checkbox" id="confirm-toggle" checked></label>
+    <span>Confirm moves: <span id="confirm-state">On</span></span>
   </div>
-  <div id="room-info"></div>
-</div>
 
-<script>
-/* ============================================================
-   >>> STEP 1: PASTE YOUR FIREBASE DATABASE URL BELOW <<<
-   Replace the line below with the URL from your own Firebase
-   Realtime Database (see the setup guide). It looks like:
-     https://your-project-name-default-rtdb.firebaseio.com
-   Until you do this, only "Play locally" will work.
-   ============================================================ */
-const FIREBASE_URL = 'https://abalone-game-52a53-default-rtdb.asia-southeast1.firebasedatabase.app/';
-/* ============================================================ */
+  <script>
+    /* ============================================================
+       >>> STEP 1: PASTE YOUR FIREBASE DATABASE URL BELOW <<<
+       Replace the line below with the URL from your own Firebase
+       Realtime Database (see the setup guide). It looks like:
+         https://your-project-name-default-rtdb.firebaseio.com
+       Until you do this, only "Play locally" will work.
+       ============================================================ */
+    const FIREBASE_URL = 'https://abalone-game-52a53-default-rtdb.asia-southeast1.firebasedatabase.app/';
+    /* ============================================================ */
 
-const CELL_R = 54, MARBLE_R = 23, HOLE_R = 21;
-const CX = 360, CY = 340;
-const COLORS = {EMPTY:0, BLACK:1, WHITE:2};
-const DIRS = [{dq:1,dr:0},{dq:-1,dr:0},{dq:0,dr:1},{dq:0,dr:-1},{dq:1,dr:-1},{dq:-1,dr:1}];
+    const CELL_R = 54, MARBLE_R = 23, HOLE_R = 21;
+    const CX = 360, CY = 340;
+    const COLORS = { EMPTY: 0, BLACK: 1, WHITE: 2 };
+    const DIRS = [{ dq: 1, dr: 0 }, { dq: -1, dr: 0 }, { dq: 0, dr: 1 }, { dq: 0, dr: -1 }, { dq: 1, dr: -1 }, { dq: -1, dr: 1 }];
+    const MODE = { LOCAL: 'local', PRIVATE: 'private', MATCHMADE: 'matchmade' };
+    const START_RATING = 1000, K_FACTOR = 32;
+    const QUEUE_TIMEOUT_MS = 60000, HEARTBEAT_MS = 8000;
+    const RANKED_TIERS = [{ n: 'Bronze', max: 1099 }, { n: 'Silver', max: 1299 }, { n: 'Gold', max: 1499 }, { n: 'Platinum', max: 1699 }, { n: 'Diamond', max: Infinity }];
 
-let board = {}, selected = [], turn = COLORS.BLACK;
-let scores = {black:0, white:0};
-let gameOver = false, animating = false, flipped = false;
-let myColor = null, roomId = null, pollInterval = null;
-let localMode = true, lastSeenMove = null, moveCount = 0;
-let pendingColor = COLORS.BLACK;
-let lastMoveData = [], lastMoved = [];
+    // Game state
+    let board = {}, selected = [], turn = COLORS.BLACK;
+    let scores = { black: 0, white: 0 };
+    let gameOver = false, animating = false, flipped = false;
+    let myColor = null, roomId = null, pollInterval = null, gameMode = MODE.LOCAL;
+    let localMode = true, lastSeenMove = null, moveCount = 0;
+    let pendingColor = COLORS.BLACK;
+    let lastMoveData = [], lastMoved = [];
 
-function key(q,r){return `${q},${r}`}
-function set(q,r,c){board[key(q,r)]=c}
-function get(q,r){return board[key(q,r)]??null}
-function isValid(q,r){const s=-q-r;return Math.abs(q)<=4&&Math.abs(r)<=4&&Math.abs(s)<=4}
-function inList(list,q,r){return list.some(([a,b])=>a===q&&b===r)}
+    // Identity & ranking
+    let playerId = null, displayName = 'Player', myRating = START_RATING, myStats = { wins: 0, losses: 0, draws: 0 };
+    let confirmMoves = true;
 
-function makeBoard(){
-  board={};
-  for(let q=-4;q<=4;q++)for(let r=-4;r<=4;r++){if(isValid(q,r))set(q,r,COLORS.EMPTY);}
-  for(let q=-4;q<=4;q++)for(let r=3;r<=4;r++) if(isValid(q,r)) set(q,r,COLORS.BLACK);
-  [[-2,2],[-1,2],[0,2]].forEach(([q,r])=>set(q,r,COLORS.BLACK));
-  for(let q=-4;q<=4;q++)for(let r=-4;r<=-3;r++) if(isValid(q,r)) set(q,r,COLORS.WHITE);
-  [[0,-2],[1,-2],[2,-2]].forEach(([q,r])=>set(q,r,COLORS.WHITE));
-}
+    // Move-confirmation (Feature 1)
+    let pendingMove = null;
 
-const canvas = document.getElementById('board');
-const ctx = canvas.getContext('2d');
+    // Matchmaking (Feature 2)
+    let queueType = null, queueJoinedAt = 0, queueTimerId = null, queueClaiming = false;
 
-function boardToPixel(q,r){
-  let qq=q,rr=r;
-  if(flipped){qq=-q;rr=-r;}
-  return {x: CX + CELL_R*(qq + rr*0.5), y: CY + CELL_R*rr*0.866};
-}
-function pixelToBoard(px,py){
-  let r=(py-CY)/(CELL_R*0.866);
-  let q=(px-CX)/CELL_R - r*0.5;
-  let R=roundHex(q,r);
-  if(flipped)return[-R[0],-R[1]];
-  return R;
-}
-function roundHex(q,r){
-  const s=-q-r;let rq=Math.round(q),rr=Math.round(r),rs=Math.round(s);
-  const dq=Math.abs(rq-q),dr=Math.abs(rr-r),ds=Math.abs(rs-s);
-  if(dq>dr&&dq>ds)rq=-rr-rs;else if(dr>ds)rr=-rq-rs;
-  return[rq,rr];
-}
+    // Firebase / move state (Feature 4)
+    let lastResultApplied = null, drewOfferLocal = null;
+    let myLastWrite = 0, oppLastSeen = 0;
+    let opponentId = null, opponentName = 'Opponent', opponentRating = START_RATING, opponentStats = { wins: 0, losses: 0, draws: 0 };
+    let isRoomCreator = false, heartbeatId = null;
 
-function drawBackground(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='#2f2f2f';ctx.fillRect(0,0,canvas.width,canvas.height);
-  const R=278, H=R*0.866;
-  ctx.beginPath();
-  ctx.moveTo(CX+R,CY);ctx.lineTo(CX+R/2,CY-H);ctx.lineTo(CX-R/2,CY-H);
-  ctx.lineTo(CX-R,CY);ctx.lineTo(CX-R/2,CY+H);ctx.lineTo(CX+R/2,CY+H);ctx.closePath();
-  ctx.lineJoin='round';ctx.lineWidth=14;ctx.strokeStyle='#7a9b54';ctx.stroke();
-  ctx.fillStyle='#7a9b54';ctx.fill();
-  for(let q=-4;q<=4;q++)for(let r=-4;r<=4;r++){
-    if(!isValid(q,r))continue;
-    const {x,y}=boardToPixel(q,r);
-    const g=ctx.createRadialGradient(x,y-4,2,x,y,HOLE_R);
-    g.addColorStop(0,'#2a2a2a');g.addColorStop(1,'#404040');
-    ctx.beginPath();ctx.arc(x,y,HOLE_R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
-  }
-  if(selected.length>0){
-    const moves=getValidMoves();const seen=new Set();
-    moves.forEach(m=>m.targets.forEach(([tq,tr])=>{
-      const k=key(tq,tr);if(seen.has(k))return;seen.add(k);
-      const {x,y}=boardToPixel(tq,tr);
-      ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.55)';ctx.fill();
-    }));
-  }
-  drawLabels();
-}
+    /* ---------- localStorage helpers (guarded) ---------- */
+    function lsGet(k, def) { try { const v = localStorage.getItem(k); return v === null ? def : v; } catch (e) { return def; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
+    function lsDel(k) { try { localStorage.removeItem(k); } catch (e) { } }
+    function uuid() { return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; const v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); }
 
-function drawMarbleAt(x,y,c,alpha){
-  ctx.save();ctx.globalAlpha=alpha;
-  ctx.shadowColor='rgba(0,0,0,0.45)';ctx.shadowBlur=9;ctx.shadowOffsetY=5;
-  const g=ctx.createRadialGradient(x-9,y-11,3,x+5,y+7,MARBLE_R+7);
-  if(c===COLORS.BLACK){g.addColorStop(0,'#727884');g.addColorStop(.38,'#3a3d44');g.addColorStop(1,'#0d0f12');}
-  else{g.addColorStop(0,'#ffffff');g.addColorStop(.45,'#edf0f2');g.addColorStop(1,'#979da6');}
-  ctx.beginPath();ctx.arc(x,y,MARBLE_R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
-  ctx.restore();
-  ctx.save();ctx.globalAlpha=alpha;
-  ctx.beginPath();ctx.ellipse(x-7,y-9,7,4.5,-0.5,0,Math.PI*2);
-  ctx.fillStyle=c===COLORS.BLACK?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.9)';ctx.fill();
-  ctx.restore();
-}
-
-function drawMarbles(skip){
-  for(let q=-4;q<=4;q++)for(let r=-4;r<=4;r++){
-    if(!isValid(q,r))continue;
-    const c=get(q,r);
-    if(c===COLORS.EMPTY||c===null)continue;
-    if(skip&&skip.has(key(q,r)))continue;
-    const {x,y}=boardToPixel(q,r);
-    drawMarbleAt(x,y,c,1);
-    if(inList(lastMoved,q,r)){
-      ctx.beginPath();ctx.arc(x,y,MARBLE_R+1.5,0,Math.PI*2);
-      ctx.lineWidth=3;ctx.strokeStyle='#f2a83b';ctx.stroke();
+    /* ---------- Identity init ---------- */
+    function initIdentity() {
+      playerId = lsGet('playerId', null);
+      if (!playerId) { playerId = uuid(); lsSet('playerId', playerId); }
+      const savedName = lsGet('playerName', null);
+      displayName = savedName || ('Player-' + playerId.slice(0, 4));
+      document.getElementById('name-input').value = displayName;
+      const savedConfirm = lsGet('confirmMoves', null);
+      confirmMoves = savedConfirm === null ? true : savedConfirm === '1';
+      document.getElementById('confirm-toggle').checked = confirmMoves;
+      document.getElementById('confirm-state').textContent = confirmMoves ? 'On' : 'Off';
     }
-    if(inList(selected,q,r)){
-      ctx.beginPath();ctx.arc(x,y,MARBLE_R+4.5,0,Math.PI*2);
-      ctx.lineWidth=3.5;ctx.strokeStyle='#ffffff';ctx.stroke();
+    async function ensurePlayerRecord() {
+      if (FIREBASE_URL.includes('YOUR-PROJECT')) { updateMyStatsUI(); return; }
+      try {
+        const r = await fetch(`${FIREBASE_URL}/players/${playerId}.json`);
+        const data = await r.json();
+        if (!data) {
+          await fetch(`${FIREBASE_URL}/players/${playerId}.json`, { method: 'PUT', body: JSON.stringify({ name: displayName, rating: START_RATING, wins: 0, losses: 0, draws: 0, ts: Date.now() }) });
+          myRating = START_RATING; myStats = { wins: 0, losses: 0, draws: 0 };
+        } else {
+          myRating = data.rating ?? START_RATING;
+          myStats = { wins: data.wins || 0, losses: data.losses || 0, draws: data.draws || 0 };
+          if (data.name) { displayName = data.name; document.getElementById('name-input').value = displayName; }
+        }
+      } catch (e) { }
+      updateMyStatsUI(); loadLeaderboard();
     }
-  }
-}
-
-function drawBoard(){drawBackground();drawMarbles(null);}
-
-function drawLabels(){
-  ctx.fillStyle='#f0f0f0';ctx.font='600 17px Segoe UI';
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  const OFF=CELL_R*0.92;
-  for(let r=-4;r<=4;r++){
-    let minQ=99;for(let q=-4;q<=4;q++) if(isValid(q,r)&&q<minQ) minQ=q;
-    const {x,y}=boardToPixel(minQ,r);
-    const dx=(x<CX?-OFF:OFF);
-    ctx.fillText(String.fromCharCode(97+(4-r)), x+dx, y);
-  }
-  for(let q=-4;q<=4;q++){
-    const maxR=Math.min(4,4-q);
-    const {x,y}=boardToPixel(q,maxR);
-    const num=q+5;
-    if(maxR===4){
-      const dy=(y<CY?-OFF:OFF);
-      ctx.fillText(String(num), x, y+dy);
-    }else{
-      let vx=x-CX,vy=y-CY,L=Math.hypot(vx,vy)||1;
-      ctx.fillText(String(num), x+vx/L*OFF, y+vy/L*OFF);
-    }
-  }
-}
-
-function animateMove(anims, done){
-  animating=true;
-  const dur=280, start=performance.now();
-  const skip=new Set(anims.filter(a=>!a.off).map(a=>a.toKey));
-  function frame(now){
-    let t=Math.min(1,(now-start)/dur);
-    const e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
-    drawBackground();drawMarbles(skip);
-    for(const a of anims){
-      const x=a.fromXY.x+(a.toXY.x-a.fromXY.x)*e;
-      const y=a.fromXY.y+(a.toXY.y-a.fromXY.y)*e;
-      drawMarbleAt(x,y,a.color,a.off?(1-e):1);
-    }
-    if(t<1)requestAnimationFrame(frame);
-    else{animating=false;drawBoard();done&&done();}
-  }
-  requestAnimationFrame(frame);
-}
-
-function getValidMoves(){
-  if(selected.length===0)return[];
-  const moves=[];for(const dir of DIRS) tryMove(selected,dir,moves);return moves;
-}
-function tryMove(sel,dir,moves){
-  const sorted=[...sel].sort((a,b)=>(a[0]*dir.dq+a[1]*dir.dr)-(b[0]*dir.dq+b[1]*dir.dr));
-  if(sel.length>1){
-    const inline=isCollinear(sorted,dir),side=isSidestep(sorted);
-    if(!inline&&!side)return;
-    if(side&&!inline){
-      for(const[q,r]of sel){const nq=q+dir.dq,nr=r+dir.dr;if(!isValid(nq,nr)||get(nq,nr)!==COLORS.EMPTY)return;}
-      moves.push({type:'side',sel,dir,targets:sel.map(([q,r])=>[q+dir.dq,r+dir.dr])});return;
-    }
-  }
-  if(sel.length===1){
-    const[q,r]=sel[0];const nq=q+dir.dq,nr=r+dir.dr;
-    if(!isValid(nq,nr))return;
-    if(get(nq,nr)===COLORS.EMPTY)moves.push({type:'inline',sel,dir,targets:[[nq,nr]]});
-    return;
-  }
-  if(!isCollinear(sorted,dir))return;
-  const lead=sorted[sorted.length-1];
-  const lq=lead[0]+dir.dq,lr=lead[1]+dir.dr,lc=get(lq,lr);
-  if(lc===COLORS.EMPTY){moves.push({type:'inline',sel,dir,targets:[[lq,lr]]});}
-  else if(lc!==null&&lc!==turn){
-    const opp=[];let cq=lq,cr=lr;
-    while(get(cq,cr)===opponent(turn)){opp.push([cq,cr]);cq+=dir.dq;cr+=dir.dr;}
-    if(opp.length>=sel.length)return;
-    const ec=get(cq,cr);
-    if(ec===COLORS.EMPTY||!isValid(cq,cr)){
-      moves.push({type:'push',sel,dir,targets:[[lq,lr]],push:opp,pushTo:[cq,cr],pushOff:!isValid(cq,cr)||ec===null});
-    }
-  }
-}
-function isCollinear(sorted,dir){
-  if(sorted.length<2)return true;
-  for(let i=1;i<sorted.length;i++){
-    const dq=sorted[i][0]-sorted[i-1][0],dr=sorted[i][1]-sorted[i-1][1];
-    if(!(dq===dir.dq&&dr===dir.dr)&&!(dq===-dir.dq&&dr===-dir.dr))return false;
-  }return true;
-}
-function isSidestep(sel){
-  if(sel.length<2)return false;
-  for(const dir of DIRS){
-    let ok=true;
-    const s=[...sel].sort((a,b)=>(a[0]*dir.dq+a[1]*dir.dr)-(b[0]*dir.dq+b[1]*dir.dr));
-    for(let i=1;i<s.length;i++) if(s[i][0]-s[i-1][0]!==dir.dq||s[i][1]-s[i-1][1]!==dir.dr){ok=false;break;}
-    if(ok)return true;
-  }return false;
-}
-function opponent(c){return c===COLORS.BLACK?COLORS.WHITE:COLORS.BLACK}
-
-function applyMove(move){
-  const myC=turn, dir=move.dir;
-  lastMoveData=[];
-  if(move.type==='push'){
-    move.push.forEach((p,i)=>{
-      const[pq,pr]=p;const off=move.pushOff&&i===move.push.length-1;
-      lastMoveData.push({fq:pq,fr:pr,tq:pq+dir.dq,tr:pr+dir.dr,off,c:opponent(myC)});
-    });
-  }
-  move.sel.forEach(([q,r])=>{
-    lastMoveData.push({fq:q,fr:r,tq:q+dir.dq,tr:r+dir.dr,off:false,c:myC});
-  });
-  if(move.type==='push'){
-    for(let i=move.push.length-1;i>=0;i--){
-      const[pq,pr]=move.push[i];
-      if(move.pushOff&&i===move.push.length-1){
-        set(pq,pr,COLORS.EMPTY);
-        if(myC===COLORS.BLACK)scores.white++;else scores.black++;
-      }else{set(pq+dir.dq,pr+dir.dr,get(pq,pr));set(pq,pr,COLORS.EMPTY);}
-    }
-  }
-  if(move.type==='inline'||move.type==='push'){
-    const s=[...move.sel].sort((a,b)=>(b[0]*dir.dq+b[1]*dir.dr)-(a[0]*dir.dq+a[1]*dir.dr));
-    for(const[q,r]of s){set(q+dir.dq,r+dir.dr,myC);set(q,r,COLORS.EMPTY);}
-  }else{for(const[q,r]of move.sel){set(q+dir.dq,r+dir.dr,myC);set(q,r,COLORS.EMPTY);}}
-  moveCount++;turn=opponent(turn);selected=[];
-  lastMoved=lastMoveData.filter(m=>!m.off).map(m=>[m.tq,m.tr]);
-  const anims=lastMoveData.map(m=>({color:m.c,fromXY:boardToPixel(m.fq,m.fr),toXY:boardToPixel(m.tq,m.tr),off:m.off,toKey:m.off?null:key(m.tq,m.tr)}));
-  animateMove(anims, ()=>{
-    updateUI();const w=checkWin();
-    if(w){gameOver=true;showMsg((w===COLORS.BLACK?'Black':'White')+' wins! Click New Game.');}
-  });
-}
-function checkWin(){if(scores.black>=6)return COLORS.BLACK;if(scores.white>=6)return COLORS.WHITE;return null}
-
-canvas.addEventListener('click',e=>{
-  if(gameOver||animating)return;
-  if(!localMode&&myColor!==turn){showMsg("Wait for your turn!");return;}
-  const rect=canvas.getBoundingClientRect();
-  const px=(e.clientX-rect.left)*(canvas.width/rect.width);
-  const py=(e.clientY-rect.top)*(canvas.height/rect.height);
-  const[q,r]=pixelToBoard(px,py);
-  if(!isValid(q,r))return;
-  const c=get(q,r);
-  if(c===turn){
-    const idx=selected.findIndex(([sq,sr])=>sq===q&&sr===r);
-    if(idx>=0)selected.splice(idx,1);
-    else{if(selected.length>=3){showMsg("Max 3 marbles");return;}selected.push([q,r]);}
-    showMsg('');drawBoard();return;
-  }
-  if(selected.length===0){showMsg("Select your marble first");return;}
-  const moves=getValidMoves();
-  const move=moves.find(m=>m.type==='push'
-    ?m.targets.some(([tq,tr])=>tq===q&&tr===r)||m.push.some(([tq,tr])=>tq===q&&tr===r)
-    :m.targets.some(([tq,tr])=>tq===q&&tr===r));
-  if(move){showMsg('');localMode?applyMove(move):sendMove(move);}
-  else{showMsg("Invalid move");selected=[];drawBoard();}
-});
-
-function showMsg(m){document.getElementById('msg').textContent=m}
-function setTag(tagId,nameId,scoreId,color){
-  const tag=document.getElementById(tagId);
-  tag.querySelector('.avatar').innerHTML = color===COLORS.WHITE?'&#9711;':'&#9899;';
-  let name = color===COLORS.WHITE?'White':'Black';
-  if(!localMode) name = (color===myColor)?'You':'Opponent';
-  document.getElementById(nameId).textContent=name;
-  document.getElementById(scoreId).textContent=(color===COLORS.WHITE?scores.white:scores.black)+' lost';
-}
-function updateUI(){
-  const bottomColor = localMode?COLORS.BLACK:myColor;
-  const topColor = opponent(bottomColor);
-  setTag('top-player','top-name','top-score',topColor);
-  setTag('bottom-player','bottom-name','bottom-score',bottomColor);
-  document.getElementById('bottom-player').style.outline=(turn===bottomColor)?'2px solid #fff':'none';
-  document.getElementById('top-player').style.outline=(turn===topColor)?'2px solid #fff':'none';
-}
-
-function pickSide(c){
-  pendingColor=c;
-  document.getElementById('side-black').classList.toggle('active',c===COLORS.BLACK);
-  document.getElementById('side-white').classList.toggle('active',c===COLORS.WHITE);
-}
-
-function genRoomCode(){return Math.random().toString(36).substr(2,6).toUpperCase()}
-async function createRoom(){
-  if(FIREBASE_URL.includes('YOUR-PROJECT')){document.getElementById('lobby-msg').textContent='Add your Firebase URL in the code first (see setup guide). You can still Play locally.';return;}
-  roomId=genRoomCode();myColor=pendingColor;localMode=false;
-  makeBoard();scores={black:0,white:0};turn=COLORS.BLACK;gameOver=false;lastMoved=[];
-  try{
-    const r=await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`,{method:'PUT',body:JSON.stringify({state:serializeState(),creatorColor:myColor,created:Date.now(),moveId:0})});
-    if(!r.ok)throw 0;
-    document.getElementById('lobby-main').style.display='none';
-    document.getElementById('lobby-waiting').style.display='block';
-    document.getElementById('room-code-display').textContent=roomId;
-    document.getElementById('waiting-side').textContent='You will play '+(myColor===COLORS.BLACK?'Black (move first)':'White (move second)');
-    pollForOpponent();
-  }catch(e){document.getElementById('lobby-msg').textContent='Could not reach the database. Check your Firebase URL and rules.';}
-}
-async function joinRoom(){
-  if(FIREBASE_URL.includes('YOUR-PROJECT')){document.getElementById('lobby-msg').textContent='Add your Firebase URL in the code first (see setup guide).';return;}
-  const code=document.getElementById('join-code').value.trim().toUpperCase();
-  if(code.length<4){document.getElementById('lobby-msg').textContent='Enter a room code';return;}
-  roomId=code;localMode=false;
-  try{
-    const r=await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`);const data=await r.json();
-    if(!data||!data.state){document.getElementById('lobby-msg').textContent='Room not found';return;}
-    myColor = (data.creatorColor===COLORS.WHITE)?COLORS.BLACK:COLORS.WHITE;
-    await fetch(`${FIREBASE_URL}/rooms/${roomId}/joined.json`,{method:'PUT',body:'"true"'});
-    deserializeState(data.state);lastSeenMove=data.moveId||0;lastMoved=[];startGame();pollOpponent();
-  }catch(e){document.getElementById('lobby-msg').textContent='Could not join room.';}
-}
-function pollForOpponent(){
-  pollInterval=setInterval(async()=>{
-    try{const r=await fetch(`${FIREBASE_URL}/rooms/${roomId}/joined.json`);if(await r.json()){clearInterval(pollInterval);lastSeenMove=0;startGame();pollOpponent();}}catch(e){}
-  },2000);
-}
-async function sendMove(move){
-  applyMove(move);
-  try{await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`,{method:'PATCH',body:JSON.stringify({state:serializeState(),moveId:moveCount,lastMove:lastMoveData})});}catch(e){}
-}
-function pollOpponent(){
-  pollInterval=setInterval(async()=>{
-    if(gameOver||animating)return;
-    try{
-      const r=await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`);const data=await r.json();
-      if(data&&data.moveId!=null&&data.moveId!==lastSeenMove){
-        lastSeenMove=data.moveId;
-        deserializeState(data.state);
-        if(data.lastMove&&data.lastMove.length){
-          lastMoved=data.lastMove.filter(m=>!m.off).map(m=>[m.tq,m.tr]);
-          const anims=data.lastMove.map(m=>({color:m.c,fromXY:boardToPixel(m.fq,m.fr),toXY:boardToPixel(m.tq,m.tr),off:m.off,toKey:m.off?null:key(m.tq,m.tr)}));
-          animateMove(anims, ()=>{updateUI();const w=checkWin();if(w){gameOver=true;showMsg((w===COLORS.BLACK?'Black':'White')+' wins!');}});
-        }else{lastMoved=[];updateUI();drawBoard();}
+    async function saveName() {
+      const v = document.getElementById('name-input').value.trim().slice(0, 14) || ('Player-' + playerId.slice(0, 4));
+      displayName = v; lsSet('playerName', v);
+      document.getElementById('name-input').value = v;
+      if (!FIREBASE_URL.includes('YOUR-PROJECT')) {
+        try { await fetch(`${FIREBASE_URL}/players/${playerId}.json`, { method: 'PATCH', body: JSON.stringify({ name: v }) }); } catch (e) { }
       }
-    }catch(e){}
-  },1500);
-}
-function serializeState(){
-  const b={};for(let q=-4;q<=4;q++)for(let r=-4;r<=4;r++)if(isValid(q,r))b[key(q,r)]=get(q,r)??0;
-  return{board:b,turn,scores,moveCount};
-}
-function deserializeState(s){
-  board={};for(const[k,v]of Object.entries(s.board))board[k]=v;
-  turn=s.turn;scores=s.scores;moveCount=s.moveCount||0;gameOver=!!checkWin();
-}
+      updateMyStatsUI();
+    }
+    function tierOf(rating) { for (const t of RANKED_TIERS) { if (rating <= t.max) return t.n; } return 'Diamond'; }
+    function updateMyStatsUI() {
+      document.getElementById('my-stats').textContent = `${myStats.wins}W / ${myStats.losses}L / ${myStats.draws}D`;
+      document.getElementById('tier-badge').textContent = myRating > 0 ? `${myRating} (${tierOf(myRating)})` : '';
+    }
+    async function loadLeaderboard() {
+      if (FIREBASE_URL.includes('YOUR-PROJECT')) { document.getElementById('leaderboard').innerHTML = ''; return; }
+      try {
+        const r = await fetch(`${FIREBASE_URL}/players.json?orderBy="rating"&limitToLast=10`);
+        const data = await r.json();
+        let arr = [];
+        if (data) { for (const id in data) arr.push({ id, ...data[id] }); }
+        arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        const el = document.getElementById('leaderboard');
+        if (arr.length === 0) { el.innerHTML = ''; return; }
+        el.innerHTML = '<div style="color:#666;border-bottom:1px solid #333;margin-bottom:.3rem">Top players</div>' +
+          arr.map(p => `<div class="${p.id === playerId ? 'me' : ''}">${escapeHtml(p.name || 'Player')} — ${p.rating || START_RATING}</div>`).join('');
+      } catch (e) { document.getElementById('leaderboard').innerHTML = ''; }
+    }
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-function startLocal(){localMode=true;myColor=null;roomId=null;flipped=false;makeBoard();scores={black:0,white:0};turn=COLORS.BLACK;gameOver=false;selected=[];lastMoved=[];startGame();}
-function startGame(){
-  flipped = (!localMode && myColor===COLORS.WHITE);
-  document.getElementById('lobby').style.display='none';
-  document.getElementById('game-area').style.display='flex';
-  if(roomId)document.getElementById('room-info').textContent=`Room: ${roomId} — you are ${myColor===COLORS.BLACK?'Black':'White'}`;
-  else document.getElementById('room-info').textContent='';
-  updateUI();drawBoard();
-}
-function resetGame(){
-  makeBoard();scores={black:0,white:0};turn=COLORS.BLACK;gameOver=false;selected=[];animating=false;lastMoved=[];lastMoveData=[];
-  if(!localMode&&roomId){try{fetch(`${FIREBASE_URL}/rooms/${roomId}.json`,{method:'PATCH',body:JSON.stringify({state:serializeState(),moveId:0,lastMove:null})});}catch(e){}lastSeenMove=0;}
-  updateUI();drawBoard();showMsg('');
-}
-function backToLobby(){
-  if(pollInterval)clearInterval(pollInterval);
-  document.getElementById('game-area').style.display='none';
-  document.getElementById('lobby').style.display='block';
-  document.getElementById('lobby-main').style.display='block';
-  document.getElementById('lobby-waiting').style.display='none';
-  document.getElementById('lobby-msg').textContent='';
-  localMode=true;myColor=null;roomId=null;selected=[];animating=false;flipped=false;lastMoved=[];
-}
-function copyCode(){navigator.clipboard.writeText(roomId).then(()=>{});}
+    /* ============================================================
+       BOARD / RENDER (unchanged core)
+       ============================================================ */
+    function key(q, r) { return `${q},${r}` }
+    function set(q, r, c) { board[key(q, r)] = c }
+    function get(q, r) { return board[key(q, r)] ?? null }
+    function isValid(q, r) { const s = -q - r; return Math.abs(q) <= 4 && Math.abs(r) <= 4 && Math.abs(s) <= 4 }
+    function inList(list, q, r) { return list.some(([a, b]) => a === q && b === r) }
 
-makeBoard();drawBoard();
-</script>
+    function makeBoard() {
+      board = {};
+      for (let q = -4; q <= 4; q++)for (let r = -4; r <= 4; r++) { if (isValid(q, r)) set(q, r, COLORS.EMPTY); }
+      for (let q = -4; q <= 4; q++)for (let r = 3; r <= 4; r++) if (isValid(q, r)) set(q, r, COLORS.BLACK);
+      [[-2, 2], [-1, 2], [0, 2]].forEach(([q, r]) => set(q, r, COLORS.BLACK));
+      for (let q = -4; q <= 4; q++)for (let r = -4; r <= -3; r++) if (isValid(q, r)) set(q, r, COLORS.WHITE);
+      [[0, -2], [1, -2], [2, -2]].forEach(([q, r]) => set(q, r, COLORS.WHITE));
+    }
+
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+
+    function boardToPixel(q, r) {
+      let qq = q, rr = r;
+      if (flipped) { qq = -q; rr = -r; }
+      return { x: CX + CELL_R * (qq + rr * 0.5), y: CY + CELL_R * rr * 0.866 };
+    }
+    function pixelToBoard(px, py) {
+      let r = (py - CY) / (CELL_R * 0.866);
+      let q = (px - CX) / CELL_R - r * 0.5;
+      let R = roundHex(q, r);
+      if (flipped) return [-R[0], -R[1]];
+      return R;
+    }
+    function roundHex(q, r) {
+      const s = -q - r; let rq = Math.round(q), rr = Math.round(r), rs = Math.round(s);
+      const dq = Math.abs(rq - q), dr = Math.abs(rr - r), ds = Math.abs(rs - s);
+      if (dq > dr && dq > ds) rq = -rr - rs; else if (dr > ds) rr = -rq - rs;
+      return [rq, rr];
+    }
+
+    function drawBackground() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#2f2f2f'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const R = 278, H = R * 0.866;
+      ctx.beginPath();
+      ctx.moveTo(CX + R, CY); ctx.lineTo(CX + R / 2, CY - H); ctx.lineTo(CX - R / 2, CY - H);
+      ctx.lineTo(CX - R, CY); ctx.lineTo(CX - R / 2, CY + H); ctx.lineTo(CX + R / 2, CY + H); ctx.closePath();
+      ctx.lineJoin = 'round'; ctx.lineWidth = 14; ctx.strokeStyle = '#7a9b54'; ctx.stroke();
+      ctx.fillStyle = '#7a9b54'; ctx.fill();
+      for (let q = -4; q <= 4; q++)for (let r = -4; r <= 4; r++) {
+        if (!isValid(q, r)) continue;
+        const { x, y } = boardToPixel(q, r);
+        const g = ctx.createRadialGradient(x, y - 4, 2, x, y, HOLE_R);
+        g.addColorStop(0, '#2a2a2a'); g.addColorStop(1, '#404040');
+        ctx.beginPath(); ctx.arc(x, y, HOLE_R, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+      }
+      // Highlight valid move destinations based on current selection (or pending preview)
+      const high = pendingMove ? pendingMove.move.targets : (selected.length > 0 ? (() => { const m = getValidMoves(); const s = new Set(); m.forEach(x => x.targets.forEach(([q, r]) => s.add(key(q, r)))); return [...s]; })() : []);
+      if (high.length > 0) {
+        const isPending = !!pendingMove;
+        high.forEach(k => {
+          const [q, r] = k.split(',').map(Number);
+          const { x, y } = boardToPixel(q, r);
+          ctx.beginPath(); ctx.arc(x, y, isPending ? 14 : 10, 0, Math.PI * 2);
+          ctx.fillStyle = isPending ? 'rgba(242,168,59,0.6)' : 'rgba(255,255,255,0.55)';
+          ctx.fill();
+        });
+      }
+      drawLabels();
+    }
+
+    function drawMarbleAt(x, y, c, alpha) {
+      ctx.save(); ctx.globalAlpha = alpha;
+      ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 9; ctx.shadowOffsetY = 5;
+      const g = ctx.createRadialGradient(x - 9, y - 11, 3, x + 5, y + 7, MARBLE_R + 7);
+      if (c === COLORS.BLACK) { g.addColorStop(0, '#727884'); g.addColorStop(.38, '#3a3d44'); g.addColorStop(1, '#0d0f12'); }
+      else { g.addColorStop(0, '#ffffff'); g.addColorStop(.45, '#edf0f2'); g.addColorStop(1, '#979da6'); }
+      ctx.beginPath(); ctx.arc(x, y, MARBLE_R, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+      ctx.restore();
+      ctx.save(); ctx.globalAlpha = alpha;
+      ctx.beginPath(); ctx.ellipse(x - 7, y - 9, 7, 4.5, -0.5, 0, Math.PI * 2);
+      ctx.fillStyle = c === COLORS.BLACK ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.9)'; ctx.fill();
+      ctx.restore();
+    }
+
+    function drawMarbles(skip) {
+      const isPending = !!pendingMove;
+      const isMoving = (q, r) => {
+        if (!isPending) return false;
+        if (inList(pendingMove.move.sel, q, r)) return true;
+        if (pendingMove.move.push && inList(pendingMove.move.push, q, r)) return true;
+        return false;
+      };
+
+      // Layer 1: Draw all stationary / faded marbles
+      for (let q = -4; q <= 4; q++)for (let r = -4; r <= 4; r++) {
+        if (!isValid(q, r)) continue;
+        const c = get(q, r);
+        if (c === COLORS.EMPTY || c === null) continue;
+        if (skip && skip.has(key(q, r))) continue;
+
+        const { x, y } = boardToPixel(q, r);
+        if (isMoving(q, r)) {
+          drawMarbleAt(x, y, c, 0.25);
+        } else {
+          drawMarbleAt(x, y, c, 1);
+          if (inList(lastMoved, q, r)) {
+            ctx.beginPath(); ctx.arc(x, y, MARBLE_R + 1.5, 0, Math.PI * 2);
+            ctx.lineWidth = 3; ctx.strokeStyle = '#f2a83b'; ctx.stroke();
+          }
+          if (inList(selected, q, r)) {
+            ctx.beginPath(); ctx.arc(x, y, MARBLE_R + 4.5, 0, Math.PI * 2);
+            ctx.lineWidth = 3.5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+          }
+        }
+      }
+
+      // Layer 2: Draw target previews if pending move is active
+      if (isPending) {
+        const dir = pendingMove.move.dir;
+        const myC = pendingMove.color;
+
+        // Draw preview of our moving marbles
+        for (const [q, r] of pendingMove.move.sel) {
+          const tq = q + dir.dq;
+          const tr = r + dir.dr;
+          if (isValid(tq, tr)) {
+            const { x, y } = boardToPixel(tq, tr);
+            drawMarbleAt(x, y, myC, 0.7);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, MARBLE_R + 2, 0, Math.PI * 2);
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#ffffff';
+            ctx.setLineDash([4, 3]);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+
+        // Draw preview of pushed marbles
+        if (pendingMove.move.type === 'push' && pendingMove.move.push) {
+          const oppC = opponent(myC);
+          pendingMove.move.push.forEach((p, i) => {
+            const [pq, pr] = p;
+            const off = pendingMove.move.pushOff && i === pendingMove.move.push.length - 1;
+            if (!off) {
+              const tq = pq + dir.dq;
+              const tr = pr + dir.dr;
+              if (isValid(tq, tr)) {
+                const { x, y } = boardToPixel(tq, tr);
+                drawMarbleAt(x, y, oppC, 0.7);
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, MARBLE_R + 2, 0, Math.PI * 2);
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#ff7a7a';
+                ctx.setLineDash([4, 3]);
+                ctx.stroke();
+                ctx.restore();
+              }
+            }
+          });
+        }
+      }
+    }
+
+    function drawBoard() { drawBackground(); drawMarbles(null); }
+
+    function drawLabels() {
+      ctx.fillStyle = '#f0f0f0'; ctx.font = '600 17px Segoe UI';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const OFF = CELL_R * 0.92;
+      for (let r = -4; r <= 4; r++) {
+        let minQ = 99; for (let q = -4; q <= 4; q++) if (isValid(q, r) && q < minQ) minQ = q;
+        const { x, y } = boardToPixel(minQ, r);
+        const dx = (x < CX ? -OFF : OFF);
+        ctx.fillText(String.fromCharCode(97 + (4 - r)), x + dx, y);
+      }
+      for (let q = -4; q <= 4; q++) {
+        const maxR = Math.min(4, 4 - q);
+        const { x, y } = boardToPixel(q, maxR);
+        const num = q + 5;
+        if (maxR === 4) {
+          const dy = (y < CY ? -OFF : OFF);
+          ctx.fillText(String(num), x, y + dy);
+        } else {
+          let vx = x - CX, vy = y - CY, L = Math.hypot(vx, vy) || 1;
+          ctx.fillText(String(num), x + vx / L * OFF, y + vy / L * OFF);
+        }
+      }
+    }
+
+    function animateMove(anims, done) {
+      animating = true;
+      const dur = 280, start = performance.now();
+      const skip = new Set(anims.filter(a => !a.off).map(a => a.toKey));
+      function frame(now) {
+        let t = Math.min(1, (now - start) / dur);
+        const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        drawBackground(); drawMarbles(skip);
+        for (const a of anims) {
+          const x = a.fromXY.x + (a.toXY.x - a.fromXY.x) * e;
+          const y = a.fromXY.y + (a.toXY.y - a.fromXY.y) * e;
+          drawMarbleAt(x, y, a.color, a.off ? (1 - e) : 1);
+        }
+        if (t < 1) requestAnimationFrame(frame);
+        else { animating = false; drawBoard(); done && done(); }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    /* ============================================================
+       MOVE GENERATION (unchanged)
+       ============================================================ */
+    function getValidMoves() {
+      if (selected.length === 0) return [];
+      const moves = []; for (const dir of DIRS) tryMove(selected, dir, moves); return moves;
+    }
+    function tryMove(sel, dir, moves) {
+      const sorted = [...sel].sort((a, b) => (a[0] * dir.dq + a[1] * dir.dr) - (b[0] * dir.dq + b[1] * dir.dr));
+      if (sel.length > 1) {
+        const inline = isCollinear(sorted, dir), side = isSidestep(sorted);
+        if (!inline && !side) return;
+        if (side && !inline) {
+          for (const [q, r] of sel) { const nq = q + dir.dq, nr = r + dir.dr; if (!isValid(nq, nr) || get(nq, nr) !== COLORS.EMPTY) return; }
+          moves.push({ type: 'side', sel, dir, targets: sel.map(([q, r]) => [q + dir.dq, r + dir.dr]) }); return;
+        }
+      }
+      if (sel.length === 1) {
+        const [q, r] = sel[0]; const nq = q + dir.dq, nr = r + dir.dr;
+        if (!isValid(nq, nr)) return;
+        if (get(nq, nr) === COLORS.EMPTY) moves.push({ type: 'inline', sel, dir, targets: [[nq, nr]] });
+        return;
+      }
+      if (!isCollinear(sorted, dir)) return;
+      const lead = sorted[sorted.length - 1];
+      const lq = lead[0] + dir.dq, lr = lead[1] + dir.dr, lc = get(lq, lr);
+      if (lc === COLORS.EMPTY) { moves.push({ type: 'inline', sel, dir, targets: [[lq, lr]] }); }
+      else if (lc !== null && lc !== turn) {
+        const opp = []; let cq = lq, cr = lr;
+        while (get(cq, cr) === opponent(turn)) { opp.push([cq, cr]); cq += dir.dq; cr += dir.dr; }
+        if (opp.length >= sel.length) return;
+        const ec = get(cq, cr);
+        if (ec === COLORS.EMPTY || !isValid(cq, cr)) {
+          moves.push({ type: 'push', sel, dir, targets: [[lq, lr]], push: opp, pushTo: [cq, cr], pushOff: !isValid(cq, cr) || ec === null });
+        }
+      }
+    }
+    function isCollinear(sorted, dir) {
+      if (sorted.length < 2) return true;
+      for (let i = 1; i < sorted.length; i++) {
+        const dq = sorted[i][0] - sorted[i - 1][0], dr = sorted[i][1] - sorted[i - 1][1];
+        if (!(dq === dir.dq && dr === dir.dr) && !(dq === -dir.dq && dr === -dir.dr)) return false;
+      } return true;
+    }
+    function isSidestep(sel) {
+      if (sel.length < 2) return false;
+      for (const dir of DIRS) {
+        let ok = true;
+        const s = [...sel].sort((a, b) => (a[0] * dir.dq + a[1] * dir.dr) - (b[0] * dir.dq + b[1] * dir.dr));
+        for (let i = 1; i < s.length; i++) if (s[i][0] - s[i - 1][0] !== dir.dq || s[i][1] - s[i - 1][1] !== dir.dr) { ok = false; break; }
+        if (ok) return true;
+      } return false;
+    }
+    function opponent(c) { return c === COLORS.BLACK ? COLORS.WHITE : COLORS.BLACK }
+
+    /* ============================================================
+       MOVE APPLICATION
+       ============================================================ */
+    function applyMove(move) {
+      const myC = turn, dir = move.dir;
+      lastMoveData = [];
+      if (move.type === 'push') {
+        move.push.forEach((p, i) => {
+          const [pq, pr] = p; const off = move.pushOff && i === move.push.length - 1;
+          lastMoveData.push({ fq: pq, fr: pr, tq: pq + dir.dq, tr: pr + dir.dr, off, c: opponent(myC) });
+        });
+      }
+      move.sel.forEach(([q, r]) => {
+        lastMoveData.push({ fq: q, fr: r, tq: q + dir.dq, tr: r + dir.dr, off: false, c: myC });
+      });
+      if (move.type === 'push') {
+        for (let i = move.push.length - 1; i >= 0; i--) {
+          const [pq, pr] = move.push[i];
+          if (move.pushOff && i === move.push.length - 1) {
+            set(pq, pr, COLORS.EMPTY);
+            if (myC === COLORS.BLACK) scores.white++; else scores.black++;
+          } else { set(pq + dir.dq, pr + dir.dr, get(pq, pr)); set(pq, pr, COLORS.EMPTY); }
+        }
+      }
+      if (move.type === 'inline' || move.type === 'push') {
+        const s = [...move.sel].sort((a, b) => (b[0] * dir.dq + b[1] * dir.dr) - (a[0] * dir.dq + a[1] * dir.dr));
+        for (const [q, r] of s) { set(q + dir.dq, r + dir.dr, myC); set(q, r, COLORS.EMPTY); }
+      } else { for (const [q, r] of move.sel) { set(q + dir.dq, r + dir.dr, myC); set(q, r, COLORS.EMPTY); } }
+      moveCount++; turn = opponent(turn); selected = [];
+      lastMoved = lastMoveData.filter(m => !m.off).map(m => [m.tq, m.tr]);
+      const anims = lastMoveData.map(m => ({ color: m.c, fromXY: boardToPixel(m.fq, m.fr), toXY: boardToPixel(m.tq, m.tr), off: m.off, toKey: m.off ? null : key(m.tq, m.tr) }));
+      animateMove(anims, () => {
+        updateUI(); const w = checkWin();
+        if (w) { handleGameEnd(w, 'pushoff'); }
+      });
+    }
+    function checkWin() { if (scores.black >= 6) return COLORS.WHITE; if (scores.white >= 6) return COLORS.BLACK; return null }
+
+    /* ============================================================
+       FEATURE 1 — MOVE CONFIRMATION
+       ============================================================ */
+    function clearPendingMove() { pendingMove = null; document.getElementById('confirm-controls').style.display = 'none'; document.getElementById('main-controls').style.display = 'flex'; }
+    function setPendingMove(move) {
+      // Snapshot move at capture time so later selection changes don't mutate it
+      pendingMove = { move: { ...move, sel: move.sel.map(c => [...c]), targets: move.targets.map(c => [...c]), push: move.push ? move.push.map(c => [...c]) : undefined, pushTo: move.pushTo ? [...move.pushTo] : undefined }, color: turn };
+      document.getElementById('confirm-controls').style.display = 'flex';
+      document.getElementById('main-controls').style.display = 'none';
+      drawBoard();
+    }
+    function confirmPendingMove() {
+      if (!pendingMove) return;
+      if (!localMode && myColor !== turn) { showMsg("Wait for your turn!"); return; } // impossible to confirm out of turn
+      const move = pendingMove.move; clearPendingMove();
+      if (localMode) applyMove(move); else sendMove(move);
+    }
+    function cancelPendingMove() {
+      clearPendingMove(); selected = []; drawBoard(); showMsg('Move cancelled');
+    }
+    function toggleConfirmMoves() {
+      confirmMoves = document.getElementById('confirm-toggle').checked;
+      document.getElementById('confirm-state').textContent = confirmMoves ? 'On' : 'Off';
+      lsSet('confirmMoves', confirmMoves ? '1' : '0');
+      if (!confirmMoves && pendingMove) { // if turning off while pending, just clear preview
+        // leave selection intact; we don't auto-commit
+        clearPendingMove(); drawBoard();
+      }
+    }
+
+    canvas.addEventListener('click', e => {
+      if (gameOver || animating) return;
+      if (pendingMove) {
+        // A click while a move is pending: if it's a different destination of the SAME selection, switch preview; otherwise cancel & treat as new selection
+        const rect = canvas.getBoundingClientRect();
+        const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+        const [q, r] = pixelToBoard(px, py);
+        const moves = getValidMoves();
+        const alt = moves.find(m => m.targets.some(([tq, tr]) => tq === q && tr === r) || (m.push && m.push.some(([tq, tr]) => tq === q && tr === r)));
+        if (alt) { setPendingMove(alt); return; }
+        // clicked own marble -> reselect
+        const c = get(q, r);
+        if (c === turn) { cancelPendingMove(); /* fall through to selection logic */ }
+        else { cancelPendingMove(); drawBoard(); return; }
+      }
+      if (!localMode && myColor !== turn) { showMsg("Wait for your turn!"); return; }
+      const rect = canvas.getBoundingClientRect();
+      const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+      const [q, r] = pixelToBoard(px, py);
+      if (!isValid(q, r)) return;
+      const c = get(q, r);
+      if (c === turn) {
+        const idx = selected.findIndex(([sq, sr]) => sq === q && sr === r);
+        if (idx >= 0) selected.splice(idx, 1);
+        else { if (selected.length >= 3) { showMsg("Max 3 marbles"); return; } selected.push([q, r]); }
+        showMsg(''); drawBoard(); return;
+      }
+      if (selected.length === 0) { showMsg("Select your marble first"); return; }
+      const moves = getValidMoves();
+      const move = moves.find(m => m.type === 'push'
+        ? m.targets.some(([tq, tr]) => tq === q && tr === r) || m.push.some(([tq, tr]) => tq === q && tr === r)
+        : m.targets.some(([tq, tr]) => tq === q && tr === r));
+      if (move) {
+        showMsg('');
+        if (confirmMoves) { setPendingMove(move); }
+        else { if (localMode) applyMove(move); else sendMove(move); }
+      }
+      else { showMsg("Invalid move"); selected = []; drawBoard(); }
+    });
+
+    function showMsg(m) { document.getElementById('msg').textContent = m }
+    function setTag(tagId, nameId, scoreId, color, ratingId) {
+      const tag = document.getElementById(tagId);
+      tag.querySelector('.avatar').innerHTML = color === COLORS.WHITE ? '&#9711;' : '&#9899;';
+      let name = color === COLORS.WHITE ? 'White' : 'Black';
+      let rating = '';
+      if (!localMode) {
+        name = (color === myColor) ? displayName : opponentName;
+        if (gameMode === MODE.MATCHMADE || gameMode === MODE.PRIVATE) {
+          const r = (color === myColor) ? myRating : opponentRating;
+          rating = ` • ${r}`;
+        }
+      }
+      document.getElementById(nameId).textContent = name;
+      document.getElementById(scoreId).textContent = (color === COLORS.WHITE ? scores.white : scores.black) + ' lost';
+      const re = document.getElementById(ratingId); if (re) re.textContent = rating;
+    }
+    function updateUI() {
+      const bottomColor = localMode ? COLORS.BLACK : myColor;
+      const topColor = opponent(bottomColor);
+      setTag('top-player', 'top-name', 'top-score', topColor, 'top-rating');
+      setTag('bottom-player', 'bottom-name', 'bottom-score', bottomColor, 'bottom-rating');
+      document.getElementById('bottom-player').style.outline = (turn === bottomColor) ? '2px solid #fff' : 'none';
+      document.getElementById('top-player').style.outline = (turn === topColor) ? '2px solid #fff' : 'none';
+    }
+
+    /* ============================================================
+       ELO (FEATURE 3)
+       ============================================================ */
+    function expectedScore(rA, rB) { return 1 / (1 + Math.pow(10, (rB - rA) / 400)); }
+    function eloDelta(rA, rB, sA) { return Math.round(K_FACTOR * (sA - expectedScore(rA, rB))); }
+    // Transactional rating update using Firebase conditional PUT (ETag / if-match)
+    async function updateRatingConditionally(id, baseRating, delta, statField) {
+      if (FIREBASE_URL.includes('YOUR-PROJECT')) return;
+      let attempts = 0;
+      while (attempts < 5) {
+        attempts++;
+        try {
+          // read with etag
+          const rr = await fetch(`${FIREBASE_URL}/players/${id}.json`, { headers: { 'X-Firebase-ETag': 'true' } });
+          const etag = rr.headers.get('ETag');
+          const data = await rr.json();
+          if (!data) { // record missing; create
+            await fetch(`${FIREBASE_URL}/players/${id}.json`, { method: 'PUT', body: JSON.stringify({ name: 'Player', rating: clampRating(START_RATING + delta), wins: 0, losses: 0, draws: 0, ts: Date.now() }) });
+            return;
+          }
+          const cur = data.rating ?? START_RATING;
+          const newRating = clampRating(cur + delta);
+          const patch = { rating: newRating, ts: Date.now() };
+          if (statField) patch[statField] = (data[statField] || 0) + 1;
+          const headers = { 'Content-Type': 'application/json' };
+          if (etag) headers['if-match'] = etag;
+          const pr = await fetch(`${FIREBASE_URL}/players/${id}.json`, { method: 'PUT', body: JSON.stringify(Object.assign({}, data, patch)), headers });
+          if (pr.status === 412) { continue; } // precondition failed, retry
+          if (pr.ok) {
+            if (id === playerId) { myRating = newRating; if (statField) myStats[statField] = (myStats[statField] || 0) + 1; updateMyStatsUI(); }
+            else { opponentRating = newRating; if (statField) opponentStats[statField] = (opponentStats[statField] || 0) + 1; }
+            return;
+          }
+        } catch (e) { return; }
+      }
+    }
+    function clampRating(r) { return Math.max(0, Math.round(r)); }
+
+    async function applyMyRatingUpdate(winnerColor) {
+      if (gameMode !== MODE.MATCHMADE || FIREBASE_URL.includes('YOUR-PROJECT')) return;
+      if (lastResultApplied) return;
+      lastResultApplied = winnerColor;
+      try {
+        if (winnerColor === 'draw') {
+          const d = eloDelta(myRating, opponentRating, 0.5);
+          await updateRatingConditionally(playerId, myRating, d, 'draws');
+        } else {
+          const iWon = winnerColor === myColor;
+          const d = eloDelta(myRating, opponentRating, iWon ? 1 : 0);
+          await updateRatingConditionally(playerId, myRating, d, iWon ? 'wins' : 'losses');
+        }
+        loadLeaderboard();
+      } catch (e) { }
+    }
+
+    /* ============================================================
+       GAME-END HANDLING & RESULT RECORDING (idempotent, single-owner)
+       ============================================================ */
+    function handleGameEnd(winnerColor, reason) {
+      // winnerColor: COLORS.BLACK/WHITE or 'draw' ; reason: 'pushoff'|'surrender'|'draw'|'left'
+      if (gameOver) return;
+      gameOver = true; clearPendingMove();
+      let title, text;
+      if (winnerColor === 'draw') {
+        title = 'Draw!'; text = 'The game ended in a draw.';
+      } else {
+        const iWon = !localMode && winnerColor === myColor;
+        const winnerName = winnerColor === COLORS.BLACK ? 'Black' : 'White';
+        title = `${winnerName} wins!`;
+        text = localMode ? '' : (iWon ? 'You win!' : 'You lose.');
+        if (reason === 'surrender') text += ' (by surrender)';
+        else if (reason === 'left') text += ' (opponent left)';
+      }
+      showOverlay(title, text);
+      updateUI();
+
+      if (gameMode === MODE.MATCHMADE) {
+        if (isRoomCreator && reason === 'pushoff') {
+          recordResult(winnerColor);
+        }
+        applyMyRatingUpdate(winnerColor);
+      }
+    }
+    async function recordResult(winnerColor) {
+      if (FIREBASE_URL.includes('YOUR-PROJECT')) return;
+      try {
+        await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ result: winnerColor, resultTs: Date.now() }) });
+      } catch (e) { }
+    }
+
+    /* ============================================================
+       OVERLAY / PROMPT MODALS
+       ============================================================ */
+    function showOverlay(title, text) {
+      document.getElementById('overlay-title').textContent = title;
+      document.getElementById('overlay-text').textContent = text;
+      document.getElementById('overlay').style.display = 'flex';
+    }
+    function hideOverlay() { document.getElementById('overlay').style.display = 'none'; }
+    function overlayRematch() {
+      hideOverlay();
+      if (localMode) { resetGame(); }
+      else {
+        // request rematch via room flag; if both request, reset
+        requestRematch();
+      }
+    }
+    function overlayLobby() { hideOverlay(); backToLobby(); }
+    function showPrompt(text, onYes) {
+      document.getElementById('prompt-text').textContent = text;
+      const bg = document.getElementById('prompt-modal');
+      bg.style.display = 'flex';
+      const yes = document.getElementById('prompt-yes'), no = document.getElementById('prompt-no');
+      const cleanup = () => { bg.style.display = 'none'; yes.onclick = null; no.onclick = null; };
+      yes.onclick = () => { cleanup(); onYes(); };
+      no.onclick = cleanup;
+    }
+    function showDrawOfferPrompt(fromOpponent) {
+      const bg = document.getElementById('prompt-modal');
+      document.getElementById('prompt-text').textContent = fromOpponent ? `${opponentName} offers a draw. Accept?` : 'Offer a draw to your opponent?';
+      bg.style.display = 'flex';
+      const yes = document.getElementById('prompt-yes'), no = document.getElementById('prompt-no');
+      const cleanup = () => { bg.style.display = 'none'; yes.onclick = null; no.onclick = null; };
+      if (fromOpponent) {
+        yes.onclick = () => { cleanup(); acceptDraw(); };
+        no.onclick = () => { cleanup(); declineDraw(); };
+      } else {
+        yes.onclick = () => { cleanup(); sendDrawOffer(); };
+        no.onclick = cleanup;
+      }
+    }
+
+    /* ============================================================
+       FEATURE 4 — SURRENDER / DRAW / LEAVE
+       ============================================================ */
+    function confirmSurrender() {
+      if (gameOver || localMode) { if (localMode && !gameOver) { /* local: just end */ } else return; }
+      if (localMode) { showPrompt('End the game (current player surrenders)?', () => { handleGameEnd(opponent(turn), 'surrender'); }); return; }
+      showPrompt('Surrender this game? This counts as a loss' + (gameMode === MODE.MATCHMADE ? ' (ranked)' : '') + '.', () => {
+        doSurrender();
+      });
+    }
+    async function doSurrender() {
+      if (localMode) { handleGameEnd(opponent(turn), 'surrender'); return; }
+      try {
+        await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ surrenderBy: myColor, result: opponent(myColor), resultTs: Date.now() }) });
+      } catch (e) { }
+      handleGameEnd(opponent(myColor), 'surrender');
+    }
+    function offerDraw() {
+      if (gameOver || localMode) return;
+      showDrawOfferPrompt(false);
+    }
+    async function sendDrawOffer() {
+      if (localMode || gameOver) return;
+      drewOfferLocal = myColor;
+      try { await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ drawOfferBy: myColor }) }); } catch (e) { }
+      showMsg('Draw offer sent. Waiting for response...');
+    }
+    async function acceptDraw() {
+      if (localMode || gameOver) return;
+      try {
+        await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ result: 'draw', drawAccepted: true, drawOfferBy: null }) });
+      } catch (e) { }
+      handleGameEnd('draw', 'draw');
+    }
+    async function declineDraw() {
+      if (localMode || gameOver) return;
+      try { await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ drawOfferBy: null }) }); } catch (e) { }
+      showMsg('Draw declined.');
+    }
+    function leaveGame() {
+      if (gameOver) { backToLobby(); return; }
+      if (localMode) { backToLobby(); return; }
+      const ranked = (gameMode === MODE.MATCHMADE);
+      const msg = ranked
+        ? 'Leaving a RANKED game counts as a loss (you cannot dodge a loss by leaving). Leave anyway?'
+        : 'Leave this casual game? (No rating change.)';
+      showPrompt(msg, async () => {
+        if (ranked && !localMode) {
+          try { await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ leftBy: myColor, result: opponent(myColor), resultTs: Date.now() }) }); } catch (e) { }
+          await applyMyRatingUpdate(opponent(myColor));
+        }
+        backToLobby();
+      });
+    }
+    async function requestRematch() {
+      if (localMode) { resetGame(); return; }
+      try {
+        await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ ['rematchReq_' + myColor]: true }) });
+      } catch (e) { }
+      showMsg('Rematch requested. Waiting for opponent...');
+      // poll will detect when both requested, then resetGame handled in pollRoom
+    }
+
+    /* ============================================================
+       ROOM SYNC (poll-based, unified)
+       ============================================================ */
+    function pickSide(c) {
+      pendingColor = c;
+      document.getElementById('side-black').classList.toggle('active', c === COLORS.BLACK);
+      document.getElementById('side-white').classList.toggle('active', c === COLORS.WHITE);
+    }
+
+    function genRoomCode() { return Math.random().toString(36).substr(2, 6).toUpperCase() }
+
+    async function createRoom() {
+      if (FIREBASE_URL.includes('YOUR-PROJECT')) { document.getElementById('lobby-msg').textContent = 'Add your Firebase URL in the code first (see setup guide). You can still Play locally.'; return; }
+      roomId = genRoomCode(); myColor = pendingColor; localMode = false; gameMode = MODE.PRIVATE; isRoomCreator = true;
+      makeBoard(); scores = { black: 0, white: 0 }; turn = COLORS.BLACK; gameOver = false; lastMoved = [];
+      try {
+        const r = await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PUT', body: JSON.stringify({ state: serializeState(), creatorColor: myColor, created: Date.now(), moveId: 0, creatorId: playerId, joinerId: null, players: { [playerId]: { name: displayName, rating: myRating } }, hb: { [playerId]: Date.now() } }) });
+        if (!r.ok) throw 0;
+        document.getElementById('lobby-main').style.display = 'none';
+        document.getElementById('lobby-waiting').style.display = 'block';
+        document.getElementById('room-code-display').textContent = roomId;
+        document.getElementById('waiting-side').textContent = 'You will play ' + (myColor === COLORS.BLACK ? 'Black (move first)' : 'White (move second)');
+        pollForOpponent();
+      } catch (e) { document.getElementById('lobby-msg').textContent = 'Could not reach the database. Check your Firebase URL and rules.'; }
+    }
+    async function joinRoom() {
+      if (FIREBASE_URL.includes('YOUR-PROJECT')) { document.getElementById('lobby-msg').textContent = 'Add your Firebase URL in the code first (see setup guide).'; return; }
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      if (code.length < 4) { document.getElementById('lobby-msg').textContent = 'Enter a room code'; return; }
+      roomId = code; localMode = false; gameMode = MODE.PRIVATE; isRoomCreator = false;
+      try {
+        const r = await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`); const data = await r.json();
+        if (!data || !data.state) { document.getElementById('lobby-msg').textContent = 'Room not found'; return; }
+        myColor = (data.creatorColor === COLORS.WHITE) ? COLORS.BLACK : COLORS.WHITE;
+        await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ joinerId: playerId, ['players/' + playerId]: { name: displayName, rating: myRating }, ['hb/' + playerId]: Date.now() }) });
+        deserializeState(data.state); lastSeenMove = data.moveId || 0; lastMoved = [];
+        // load opponent info
+        loadOpponentInfo(data);
+        startGame(); pollRoom();
+      } catch (e) { document.getElementById('lobby-msg').textContent = 'Could not join room.'; }
+    }
+    function pollForOpponent() {
+      pollInterval = setInterval(async () => {
+        try {
+          const r = await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`); const data = await r.json();
+          if (data && data.joinerId) {
+            clearInterval(pollInterval);
+            loadOpponentInfo(data);
+            lastSeenMove = data.moveId || 0;
+            startGame(); pollRoom(); startHeartbeat();
+          }
+        } catch (e) { }
+      }, 2000);
+    }
+    function loadOpponentInfo(data) {
+      opponentId = isRoomCreator ? (data.joinerId || null) : (data.creatorId || null);
+      if (data.players && opponentId && data.players[opponentId]) {
+        opponentName = data.players[opponentId].name || 'Opponent';
+        opponentRating = data.players[opponentId].rating ?? START_RATING;
+      } else if (opponentId === null) {
+        opponentName = 'Opponent'; opponentRating = START_RATING;
+      }
+    }
+    async function startHeartbeat() {
+      stopHeartbeat();
+      heartbeatId = setInterval(() => {
+        if (!roomId) return;
+        fetch(`${FIREBASE_URL}/rooms/${roomId}/hb/${playerId}.json`, { method: 'PUT', body: String(Date.now()) }).catch(() => { });
+      }, HEARTBEAT_MS);
+    }
+    function stopHeartbeat() { if (heartbeatId) { clearInterval(heartbeatId); heartbeatId = null; } }
+
+    async function sendMove(move) {
+      applyMove(move);
+      myLastWrite = moveCount;
+      try { await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ state: serializeState(), moveId: moveCount, lastMove: lastMoveData, ['hb/' + playerId]: Date.now() }) }); } catch (e) { }
+    }
+
+    // Unified poll: handles moves, draws, surrender, leave, results, rematch, disconnect
+    function pollRoom() {
+      pollInterval = setInterval(async () => {
+        if (gameOver || animating) {
+          // even when gameOver, keep polling for opponent's rematch request / actions
+          if (gameOver) { pollEndState(); }
+          return;
+        }
+        try {
+          const r = await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`); const data = await r.json();
+          if (!data) return;
+          // Disconnect detection via heartbeat
+          if (data.hb && opponentId) {
+            const last = data.hb[opponentId];
+            if (last && Date.now() - last > HEARTBEAT_MS * 3) {
+              // opponent likely disconnected
+              handleOpponentDisconnect(); return;
+            }
+            if (data.hb[playerId]) oppLastSeen = data.hb[playerId];
+          }
+          // Result already set by opponent?
+          if (data.result && !gameOver) {
+            applyRemoteResult(data);
+            return;
+          }
+          // Draw offer from opponent
+          if (data.drawOfferBy && data.drawOfferBy !== myColor && drewOfferLocal !== data.drawOfferBy) {
+            drewOfferLocal = data.drawOfferBy;
+            showDrawOfferPrompt(true);
+          } else if (!data.drawOfferBy) {
+            drewOfferLocal = null;
+          }
+          // Move sync
+          if (data.moveId != null && data.moveId !== lastSeenMove) {
+            lastSeenMove = data.moveId;
+            deserializeState(data.state);
+            if (data.lastMove && data.lastMove.length) {
+              lastMoved = data.lastMove.filter(m => !m.off).map(m => [m.tq, m.tr]);
+              const anims = data.lastMove.map(m => ({ color: m.c, fromXY: boardToPixel(m.fq, m.fr), toXY: boardToPixel(m.tq, m.tr), off: m.off, toKey: m.off ? null : key(m.tq, m.tr) }));
+              animateMove(anims, () => { updateUI(); const w = checkWin(); if (w) { handleGameEnd(w, 'pushoff'); } });
+            } else { lastMoved = []; updateUI(); drawBoard(); }
+          }
+        } catch (e) { }
+      }, 1500);
+    }
+    function pollEndState() {
+      // Check for rematch agreement when game over
+      if (localMode || !roomId) return;
+      fetch(`${FIREBASE_URL}/rooms/${roomId}.json`).then(r => r.json()).then(data => {
+        if (!data) return;
+
+        // If game is reset by the creator, the joiner should reset as well
+        if (!isRoomCreator && data.moveId === 0 && !data.result && gameOver) {
+          resetGame(true);
+          return;
+        }
+
+        const myKey = 'rematchReq_' + myColor;
+        const oppKey = 'rematchReq_' + (myColor === COLORS.BLACK ? COLORS.WHITE : COLORS.BLACK);
+        const me = data[myKey];
+        const opp = data[oppKey];
+        if (me && opp) {
+          // both want rematch -> creator resets state (single owner), joiner waits & clears local flag
+          if (isRoomCreator) {
+            resetGame(true);
+            const patch = {};
+            patch['rematchReq_' + COLORS.BLACK] = null; patch['rematchReq_' + COLORS.WHITE] = null; patch.result = null;
+            fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify(patch) }).catch(() => { });
+          }
+        }
+      }).catch(() => { });
+    }
+    function applyRemoteResult(data) {
+      let winner = data.result;
+      let reason = 'surrender';
+      if (data.leftBy) reason = 'left';
+      else if (data.drawAccepted || winner === 'draw') { winner = 'draw'; reason = 'draw'; }
+      else if (data.surrenderBy) reason = 'surrender';
+      handleGameEnd(winner, reason);
+    }
+    function handleOpponentDisconnect() {
+      if (gameOver) return;
+      // In ranked: treat as win for us (opponent abandoned). Record result.
+      showMsg('Opponent disconnected...');
+      setTimeout(() => {
+        if (gameOver) return;
+        if (gameMode === MODE.MATCHMADE) {
+          // we record the win if we are the creator
+          if (isRoomCreator) {
+            try { fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ result: myColor, leftBy: opponentId, resultTs: Date.now() }) }); } catch (e) { }
+            recordResult(myColor);
+          }
+          handleGameEnd(myColor, 'left');
+        } else {
+          showOverlay('Opponent left', 'Your opponent disconnected. You can return to the lobby.');
+        }
+      }, 1500);
+    }
+
+    function serializeState() {
+      const b = {}; for (let q = -4; q <= 4; q++)for (let r = -4; r <= 4; r++)if (isValid(q, r)) b[key(q, r)] = get(q, r) ?? 0;
+      return { board: b, turn, scores, moveCount };
+    }
+    function deserializeState(s) {
+      board = {}; for (const [k, v] of Object.entries(s.board)) board[k] = v;
+      turn = s.turn; scores = s.scores; moveCount = s.moveCount || 0; gameOver = !!checkWin();
+    }
+
+    function startLocal() { localMode = true; gameMode = MODE.LOCAL; myColor = null; roomId = null; flipped = false; makeBoard(); scores = { black: 0, white: 0 }; turn = COLORS.BLACK; gameOver = false; selected = []; lastMoved = []; clearPendingMove(); startGame(); }
+    function startGame() {
+      flipped = (!localMode && myColor === COLORS.WHITE);
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('game-area').style.display = 'flex';
+      if (roomId) {
+        const modeLabel = gameMode === MODE.MATCHMADE ? (queueType === 'ranked' ? 'Ranked' : 'Casual') : 'Private';
+        document.getElementById('room-info').textContent = `${modeLabel} room: ${roomId} — you are ${myColor === COLORS.BLACK ? 'Black' : 'White'}`;
+      }
+      else document.getElementById('room-info').textContent = '';
+      updateUI(); drawBoard();
+    }
+    function resetGame(fromRematch) {
+      makeBoard(); scores = { black: 0, white: 0 }; turn = COLORS.BLACK; gameOver = false; selected = []; animating = false; lastMoved = []; lastMoveData = []; clearPendingMove(); hideOverlay();
+      if (!localMode && roomId) {
+        if (isRoomCreator) {
+          try {
+            const patch = { state: serializeState(), moveId: 0, lastMove: null };
+            patch.result = null; patch.drawOfferBy = null; patch.surrenderBy = null; patch.leftBy = null; patch.rematchReq_1 = null; patch.rematchReq_2 = null;
+            fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify(patch) });
+          } catch (e) { }
+        }
+        lastSeenMove = 0; lastResultApplied = null;
+      }
+      updateUI(); drawBoard(); showMsg(fromRematch ? 'Rematch!' : '');
+    }
+    function backToLobby() {
+      if (pollInterval) clearInterval(pollInterval);
+      stopHeartbeat();
+      if (queueTimerId) { clearInterval(queueTimerId); queueTimerId = null; }
+      if (mmInterval) { clearInterval(mmInterval); mmInterval = null; }
+      hideOverlay();
+      document.getElementById('game-area').style.display = 'none';
+      document.getElementById('lobby').style.display = 'block';
+      document.getElementById('lobby-main').style.display = 'block';
+      document.getElementById('lobby-waiting').style.display = 'none';
+      document.getElementById('lobby-searching').style.display = 'none';
+      document.getElementById('lobby-msg').textContent = '';
+      localMode = true; gameMode = MODE.LOCAL; myColor = null; roomId = null; selected = []; animating = false; flipped = false; lastMoved = [];
+      clearPendingMove(); drewOfferLocal = null; queueType = null; lastResultApplied = null; isRoomCreator = false; opponentId = null;
+      loadLeaderboard();
+    }
+    function copyCode() { navigator.clipboard.writeText(roomId).then(() => { }); }
+
+    /* ============================================================
+       FEATURE 2 — MATCHMAKING QUEUE (Unified & Index-Free)
+       ============================================================ */
+    let mmInterval = null;
+
+    async function queue(type) {
+      queueType = type;
+      if (FIREBASE_URL.includes('YOUR-PROJECT')) { document.getElementById('lobby-msg').textContent = 'Add your Firebase URL to play online.'; return; }
+
+      document.getElementById('lobby-main').style.display = 'none';
+      document.getElementById('lobby-searching').style.display = 'block';
+      document.getElementById('search-title').textContent = type === 'ranked' ? 'Searching for a ranked game...' : 'Searching for a casual game...';
+      document.getElementById('search-sub').textContent = type === 'ranked' ? `Rating: ${myRating} (${tierOf(myRating)})` : 'Casual — any opponent';
+
+      queueJoinedAt = Date.now();
+      queueClaiming = false;
+      startQueueTimer();
+
+      if (mmInterval) { clearInterval(mmInterval); mmInterval = null; }
+
+      try {
+        await fetch(`${FIREBASE_URL}/queue/${type}/${playerId}.json`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: displayName,
+            rating: myRating,
+            ts: Date.now(),
+            status: 'waiting',
+            roomId: null
+          })
+        });
+
+        startMatchmakingPoll();
+      } catch (e) {
+        cancelQueue();
+        document.getElementById('lobby-msg').textContent = 'Could not reach the database.';
+      }
+    }
+
+    function startQueueTimer() {
+      if (queueTimerId) clearInterval(queueTimerId);
+      queueTimerId = setInterval(() => {
+        const s = Math.floor((Date.now() - queueJoinedAt) / 1000);
+        document.getElementById('queue-timer').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      }, 500);
+    }
+
+    async function cancelQueue() {
+      if (queueTimerId) { clearInterval(queueTimerId); queueTimerId = null; }
+      if (mmInterval) { clearInterval(mmInterval); mmInterval = null; }
+      if (queueType && playerId && !FIREBASE_URL.includes('YOUR-PROJECT')) {
+        try { await fetch(`${FIREBASE_URL}/queue/${queueType}/${playerId}.json`, { method: 'DELETE' }); } catch (e) { }
+      }
+      queueType = null; queueClaiming = false;
+      document.getElementById('lobby-searching').style.display = 'none';
+      document.getElementById('lobby-main').style.display = 'block';
+    }
+
+    function startMatchmakingPoll() {
+      if (mmInterval) clearInterval(mmInterval);
+      mmInterval = setInterval(async () => {
+        if (!queueType) { clearInterval(mmInterval); return; }
+        if (queueClaiming) return;
+
+        try {
+          const r = await fetch(`${FIREBASE_URL}/queue/${queueType}.json`);
+          const data = await r.json() || {};
+
+          const now = Date.now();
+
+          // 1. Check if we have been claimed/matched by someone else
+          const myEntry = data[playerId];
+          if (myEntry && myEntry.status === 'matched' && myEntry.roomId) {
+            clearInterval(mmInterval); mmInterval = null;
+            enterMatchedRoomAsJoiner(myEntry.roomId);
+            return;
+          }
+
+          // 2. Clean up stale entries and gather active candidates
+          let waiting = [];
+          for (const id in data) {
+            const e = data[id];
+            if (!e) continue;
+
+            if (now - (e.ts || 0) > QUEUE_TIMEOUT_MS) {
+              fetch(`${FIREBASE_URL}/queue/${queueType}/${id}.json`, { method: 'DELETE' }).catch(() => { });
+              continue;
+            }
+
+            if (id === playerId) continue;
+            if (e.status === 'waiting') {
+              waiting.push({ id, ...e });
+            }
+          }
+
+          // Reassert/update our own entry
+          if (!myEntry) {
+            fetch(`${FIREBASE_URL}/queue/${queueType}/${playerId}.json`, {
+              method: 'PUT',
+              body: JSON.stringify({
+                name: displayName,
+                rating: myRating,
+                ts: now,
+                status: 'waiting',
+                roomId: null
+              })
+            }).catch(() => { });
+          } else {
+            fetch(`${FIREBASE_URL}/queue/${queueType}/${playerId}.json`, {
+              method: 'PATCH',
+              body: JSON.stringify({ ts: now })
+            }).catch(() => { });
+          }
+
+          if (waiting.length === 0) return;
+
+          // 3. Find the best match candidate
+          waiting.sort((a, b) => (a.ts || 0) - (b.ts || 0)); // Oldest first
+
+          let candidate = null;
+          if (queueType === 'casual') {
+            candidate = waiting[0];
+          } else {
+            const elapsed = (now - queueJoinedAt) / 1000;
+            const searchWindow = Math.min(500, 100 + Math.floor(elapsed / 10) * 50);
+            const inWindow = waiting.filter(w => Math.abs((w.rating || START_RATING) - myRating) <= searchWindow);
+            candidate = inWindow.length > 0 ? inWindow[0] : null;
+            if (!candidate && searchWindow >= 500) {
+              candidate = waiting[0];
+            }
+          }
+
+          if (!candidate) return;
+
+          // 4. Symmetry break: only lexicographically smaller playerId claims
+          if (playerId > candidate.id) {
+            return; // Wait to be claimed
+          }
+
+          // 5. Try to claim atomically
+          queueClaiming = true;
+          const claimedRoomId = await atomicClaim(queueType, candidate.id);
+          if (claimedRoomId) {
+            clearInterval(mmInterval); mmInterval = null;
+            onMatchMade(candidate, claimedRoomId);
+          } else {
+            queueClaiming = false;
+          }
+
+        } catch (e) {
+          queueClaiming = false;
+        }
+      }, 1500);
+    }
+
+    async function atomicClaim(type, candidateId) {
+      if (FIREBASE_URL.includes('YOUR-PROJECT')) return null;
+      try {
+        const rr = await fetch(`${FIREBASE_URL}/queue/${type}/${candidateId}.json`, { headers: { 'X-Firebase-ETag': 'true' } });
+        const etag = rr.headers.get('ETag');
+        const cur = await rr.json();
+        if (!cur || cur.status !== 'waiting') return null; // already taken
+        const newRoomId = genRoomCode();
+        const headers = { 'Content-Type': 'application/json' };
+        if (etag) headers['if-match'] = etag;
+        const pr = await fetch(`${FIREBASE_URL}/queue/${type}/${candidateId}.json`, { method: 'PUT', body: JSON.stringify({ ...cur, status: 'matched', roomId: newRoomId }), headers });
+        if (pr.status === 412) return null; // race lost
+        if (!pr.ok) return null;
+        return newRoomId;
+      } catch (e) { return null; }
+    }
+
+    async function onMatchMade(candidate, rid) {
+      roomId = rid; isRoomCreator = true; localMode = false; gameMode = MODE.MATCHMADE;
+      opponentId = candidate.id; opponentName = candidate.name || 'Opponent'; opponentRating = candidate.rating || START_RATING;
+      myColor = Math.random() < 0.5 ? COLORS.BLACK : COLORS.WHITE;
+      try { await fetch(`${FIREBASE_URL}/queue/${queueType}/${playerId}.json`, { method: 'DELETE' }); } catch (e) { }
+      makeBoard(); scores = { black: 0, white: 0 }; turn = COLORS.BLACK; gameOver = false; lastMoved = []; lastSeenMove = 0;
+      try {
+        await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, {
+          method: 'PUT', body: JSON.stringify({
+            state: serializeState(), creatorColor: myColor, created: Date.now(), moveId: 0,
+            creatorId: playerId, joinerId: opponentId,
+            players: { [playerId]: { name: displayName, rating: myRating }, [opponentId]: { name: opponentName, rating: opponentRating } },
+            hb: { [playerId]: Date.now() },
+            matchType: queueType
+          })
+        });
+      } catch (e) { }
+      queueType = null; queueClaiming = false;
+      document.getElementById('lobby-searching').style.display = 'none';
+      document.getElementById('lobby-main').style.display = 'block';
+      startGame(); pollRoom(); startHeartbeat();
+    }
+
+    async function enterMatchedRoomAsJoiner(rid) {
+      if (queueTimerId) { clearInterval(queueTimerId); queueTimerId = null; }
+      if (mmInterval) { clearInterval(mmInterval); mmInterval = null; }
+      roomId = rid; isRoomCreator = false; localMode = false; gameMode = MODE.MATCHMADE;
+      try { await fetch(`${FIREBASE_URL}/queue/${queueType}/${playerId}.json`, { method: 'DELETE' }); } catch (e) { }
+      try {
+        const r = await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`); const data = await r.json();
+        if (!data || !data.state) { cancelQueue(); document.getElementById('lobby-msg').textContent = 'Match failed. Try again.'; return; }
+        myColor = (data.creatorColor === COLORS.WHITE) ? COLORS.BLACK : COLORS.WHITE;
+        opponentId = data.creatorId;
+        if (data.players && data.players[opponentId]) { opponentName = data.players[opponentId].name || 'Opponent'; opponentRating = data.players[opponentId].rating ?? START_RATING; }
+        deserializeState(data.state); lastSeenMove = data.moveId || 0; lastMoved = [];
+        queueType = null;
+        document.getElementById('lobby-searching').style.display = 'none';
+        document.getElementById('lobby-main').style.display = 'block';
+        await fetch(`${FIREBASE_URL}/rooms/${roomId}.json`, { method: 'PATCH', body: JSON.stringify({ ['hb/' + playerId]: Date.now() }) });
+        startGame(); pollRoom(); startHeartbeat();
+      } catch (e) { cancelQueue(); }
+    }
+
+    /* ============================================================
+       INIT
+       ============================================================ */
+    document.getElementById('name-input').addEventListener('change', saveName);
+    document.getElementById('confirm-toggle').addEventListener('change', toggleConfirmMoves);
+
+    (function init() {
+      initIdentity();
+      ensurePlayerRecord();
+      makeBoard(); drawBoard();
+    })();
+  </script>
 </body>
+
 </html>
